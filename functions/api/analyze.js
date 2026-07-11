@@ -57,7 +57,7 @@ export async function onRequestPost(context) {
   }
 
   try {
-    const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+    const aiResponse = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
       messages: [
         { role: "system", content: SYSTEM_INSTRUCTION },
         { role: "user", content: 'Classify this prompt:\n\n"""' + promptText + '"""' }
