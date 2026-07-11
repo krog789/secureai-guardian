@@ -3,7 +3,7 @@
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SecureAI Guardian —  AI Prompt Security Platform</title>
+<title>SecureAI Guardian — AI Prompt Security Platform</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -26,7 +26,40 @@
   ::-webkit-scrollbar-thumb{background:rgba(0,200,255,0.3);border-radius:3px;}
 
   /* ===== LOGIN ===== */
-  #loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;}
+  #loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;overflow-y:auto;padding:24px;}
+  .auth-shell{width:420px;max-width:100%;position:relative;}
+  .login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;width:400px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(0,200,255,0.1);}
+  .auth-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;width:100%;backdrop-filter:blur(24px);box-shadow:0 0 70px rgba(0,200,255,0.12),0 20px 60px rgba(0,0,0,0.4);animation:authFade 0.35s ease;}
+  @keyframes authFade{from{opacity:0;transform:translateY(10px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .auth-step{display:none;}
+  .auth-step.active{display:block;}
+  .auth-step-header{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+  .auth-back-btn{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;flex-shrink:0;}
+  .auth-back-btn:hover{border-color:var(--border-hover);color:var(--text);}
+  .auth-step-title{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-0.3px;}
+  .auth-landing-copy{font-size:12.5px;color:var(--text2);line-height:1.6;text-align:center;margin:14px 0 24px;}
+  .auth-btn-stack{display:flex;flex-direction:column;gap:10px;}
+  .btn-login-outline{padding:12px;background:rgba(0,200,255,0.06);border:1px solid var(--border-hover);border-radius:var(--radius);color:var(--blue);font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .btn-login-outline:hover{background:rgba(0,200,255,0.12);}
+  .auth-divider{display:flex;align-items:center;text-align:center;color:var(--text3);font-size:11px;margin:22px 0 16px;text-transform:uppercase;letter-spacing:0.5px;}
+  .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+  .auth-divider span{padding:0 12px;white-space:nowrap;}
+  .oauth-row{display:flex;gap:10px;justify-content:center;}
+  .oauth-btn{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);color:var(--text2);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+  .oauth-btn:hover{border-color:var(--border-hover);color:var(--text);background:rgba(0,200,255,0.06);transform:translateY(-1px);}
+  .auth-form{display:flex;flex-direction:column;gap:14px;}
+  .auth-link{text-align:center;font-size:12px;color:var(--blue);cursor:pointer;margin-top:18px;}
+  .auth-link:hover{text-decoration:underline;}
+  .auth-error{display:none;color:var(--red);font-size:12px;text-align:center;background:rgba(255,45,85,0.08);border:1px solid rgba(255,45,85,0.2);border-radius:8px;padding:8px 10px;}
+  .auth-error.visible{display:block;}
+  .auth-icon-badge{width:56px;height:56px;border-radius:16px;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.25);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--blue);margin:0 auto 18px;}
+  .pw-input-wrap{position:relative;}
+  .pw-input-wrap .form-input{padding-right:42px;width:100%;}
+  .pw-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px;display:flex;}
+  .pw-toggle:hover{color:var(--text2);}
+  .pw-strength-track{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-top:6px;}
+  .pw-strength-fill{height:100%;width:0%;border-radius:2px;transition:width 0.25s ease,background 0.25s ease;background:var(--red);}
+  .pw-strength-label{font-size:10.5px;color:var(--text3);margin-top:4px;font-family:var(--mono);}
   .login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;width:400px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(0,200,255,0.1);}
   .login-logo{text-align:center;margin-bottom:28px;}
   /* Professional SVG Logo */
@@ -342,31 +375,172 @@ z-index:9999;
 
 <!-- ===== LOGIN ===== -->
 <div id="loginScreen" style="display: none;">
-  <div class="login-card">
-    <div class="login-logo">
-      <svg class="login-logo-svg" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <lineargradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00c8ff"></stop><stop offset="100%" stop-color="#00ffea"></stop></lineargradient>
-          <lineargradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00ffea"></stop><stop offset="100%" stop-color="#00c8ff"></stop></lineargradient>
-        </defs>
-        <rect x="2" y="2" width="68" height="68" rx="16" fill="url(#lg1)" opacity="0.12"></rect>
-        <path d="M36 8 L62 20 L62 38 C62 52 50 63 36 67 C22 63 10 52 10 38 L10 20 Z" fill="url(#lg1)" opacity="0.2"></path>
-        <path d="M36 12 L58 23 L58 38 C58 50 48 60 36 63 C24 60 14 50 14 38 L14 23 Z" stroke="url(#lg1)" stroke-width="2" fill="none"></path>
-        <path d="M36 16 L54 26 L54 38 C54 48 46 57 36 60 C26 57 18 48 18 38 L18 26 Z" fill="url(#lg2)" opacity="0.15"></path>
-        <circle cx="36" cy="36" r="10" fill="url(#lg1)" opacity="0.9"></circle>
-        <path d="M30 36 L34 40 L42 32" stroke="#030712" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-        <circle cx="36" cy="36" r="14" stroke="url(#lg1)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"></circle>
-      </svg>
-      <div class="login-title">SecureAI Guardian</div>
-      <div class="login-subtitle">AI Prompt Security Platform v4.0</div>
+  <div class="auth-shell">
+
+    <!-- STEP: LANDING -->
+    <div class="auth-card auth-step active" id="step-landing">
+      <div class="login-logo">
+        <svg class="login-logo-svg" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <lineargradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00c8ff"></stop><stop offset="100%" stop-color="#00ffea"></stop></lineargradient>
+            <lineargradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00ffea"></stop><stop offset="100%" stop-color="#00c8ff"></stop></lineargradient>
+          </defs>
+          <rect x="2" y="2" width="68" height="68" rx="16" fill="url(#lg1)" opacity="0.12"></rect>
+          <path d="M36 8 L62 20 L62 38 C62 52 50 63 36 67 C22 63 10 52 10 38 L10 20 Z" fill="url(#lg1)" opacity="0.2"></path>
+          <path d="M36 12 L58 23 L58 38 C58 50 48 60 36 63 C24 60 14 50 14 38 L14 23 Z" stroke="url(#lg1)" stroke-width="2" fill="none"></path>
+          <path d="M36 16 L54 26 L54 38 C54 48 46 57 36 60 C26 57 18 48 18 38 L18 26 Z" fill="url(#lg2)" opacity="0.15"></path>
+          <circle cx="36" cy="36" r="10" fill="url(#lg1)" opacity="0.9"></circle>
+          <path d="M30 36 L34 40 L42 32" stroke="#030712" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          <circle cx="36" cy="36" r="14" stroke="url(#lg1)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"></circle>
+        </svg>
+        <div class="login-title">SecureAI Guardian</div>
+        <div class="login-subtitle">Enterprise AI Prompt Security Platform</div>
+      </div>
+      <div class="auth-landing-copy">Real-time threat detection, governance, and audit trails for every AI prompt in your organization.</div>
+      <div class="auth-btn-stack">
+        <button class="btn-login" onclick="showAuthStep('step-signin')"><i class="ti ti-login-2"></i> Sign in</button>
+        <button class="btn-login-outline" onclick="showAuthStep('step-signup')"><i class="ti ti-user-plus"></i> Create an account</button>
+      </div>
+      <div class="auth-divider"><span>or continue with</span></div>
+      <div class="oauth-row">
+        <button class="oauth-btn" onclick="oauthLogin('google')" title="Continue with Google"><i class="ti ti-brand-google"></i></button>
+        <button class="oauth-btn" onclick="oauthLogin('github')" title="Continue with GitHub"><i class="ti ti-brand-github"></i></button>
+        <button class="oauth-btn" onclick="oauthLogin('azure')" title="Continue with Microsoft"><i class="ti ti-brand-windows"></i></button>
+      </div>
     </div>
-    <div class="login-form">
-      <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="loginEmail" placeholder="you@example.com"></div>
-      <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="loginPassword" placeholder="••••••••"></div>
-      <button class="btn-login" id="loginSubmitBtn" onclick="doLogin()"><i class="ti ti-login-2"></i> Sign in to dashboard</button>
-      <div id="authError" style="display:none;color:var(--red);font-size:12px;text-align:center;margin-top:4px;"></div>
+
+    <!-- STEP: SIGN UP -->
+    <div class="auth-card auth-step" id="step-signup">
+      <div class="auth-step-header">
+        <button class="auth-back-btn" onclick="showAuthStep('step-landing')"><i class="ti ti-arrow-left"></i></button>
+        <div class="auth-step-title">Create your account</div>
+      </div>
+      <div class="auth-form">
+        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="signupEmail" placeholder="you@company.com"></div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="pw-input-wrap">
+            <input type="password" class="form-input" id="signupPassword" placeholder="Create a strong password" oninput="updatePwStrength()">
+            <button type="button" class="pw-toggle" onclick="togglePw('signupPassword',this)"><i class="ti ti-eye"></i></button>
+          </div>
+          <div class="pw-strength-track"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>
+          <div class="pw-strength-label" id="pwStrengthLabel">Enter a password</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm password</label>
+          <div class="pw-input-wrap">
+            <input type="password" class="form-input" id="signupConfirm" placeholder="Re-enter your password">
+            <button type="button" class="pw-toggle" onclick="togglePw('signupConfirm',this)"><i class="ti ti-eye"></i></button>
+          </div>
+        </div>
+        <button class="btn-login" id="signupSubmitBtn" onclick="doSignup()"><i class="ti ti-user-plus"></i> Create account<div class="spinner" id="signupSpinner"></div></button>
+        <div class="auth-error" id="signupError"></div>
+      </div>
+      <div class="auth-divider"><span>or continue with</span></div>
+      <div class="oauth-row">
+        <button class="oauth-btn" onclick="oauthLogin('google')" title="Continue with Google"><i class="ti ti-brand-google"></i></button>
+        <button class="oauth-btn" onclick="oauthLogin('github')" title="Continue with GitHub"><i class="ti ti-brand-github"></i></button>
+        <button class="oauth-btn" onclick="oauthLogin('azure')" title="Continue with Microsoft"><i class="ti ti-brand-windows"></i></button>
+      </div>
+      <div class="login-hint auth-link" onclick="showAuthStep('step-signin')">Already have an account? Sign in</div>
     </div>
-    <div class="login-hint" id="authToggleHint" style="cursor:pointer;text-decoration:underline;" onclick="toggleAuthMode()">New here? Create an account</div>
+
+    <!-- STEP: VERIFY EMAIL -->
+    <div class="auth-card auth-step" id="step-verify">
+      <div class="auth-icon-badge"><i class="ti ti-mail-check"></i></div>
+      <div class="auth-step-title" style="text-align:center;">Check your email</div>
+      <div class="auth-landing-copy" id="verifyEmailText">We sent a verification link to your email. Click it to activate your account.</div>
+      <button class="btn-login-outline" onclick="resendVerification()"><i class="ti ti-refresh"></i> Resend email</button>
+      <div class="login-hint auth-link" onclick="showAuthStep('step-signin')">Back to sign in</div>
+    </div>
+
+    <!-- STEP: SIGN IN -->
+    <div class="auth-card auth-step" id="step-signin">
+      <div class="auth-step-header">
+        <button class="auth-back-btn" onclick="showAuthStep('step-landing')"><i class="ti ti-arrow-left"></i></button>
+        <div class="auth-step-title">Welcome back</div>
+      </div>
+      <div class="auth-form">
+        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="loginEmail" placeholder="you@company.com"></div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="pw-input-wrap">
+            <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
+            <button type="button" class="pw-toggle" onclick="togglePw('loginPassword',this)"><i class="ti ti-eye"></i></button>
+          </div>
+        </div>
+        <div class="auth-link" style="text-align:right;font-size:12px;margin-top:-6px;" onclick="showAuthStep('step-forgot')">Forgot password?</div>
+        <button class="btn-login" id="loginSubmitBtn" onclick="doLogin()"><i class="ti ti-login-2"></i> Sign in<div class="spinner" id="loginSpinner"></div></button>
+        <div class="auth-error" id="authError"></div>
+      </div>
+      <div class="auth-divider"><span>or continue with</span></div>
+      <div class="oauth-row">
+        <button class="oauth-btn" onclick="oauthLogin('google')" title="Continue with Google"><i class="ti ti-brand-google"></i></button>
+        <button class="oauth-btn" onclick="oauthLogin('github')" title="Continue with GitHub"><i class="ti ti-brand-github"></i></button>
+        <button class="oauth-btn" onclick="oauthLogin('azure')" title="Continue with Microsoft"><i class="ti ti-brand-windows"></i></button>
+      </div>
+      <div class="login-hint auth-link" onclick="showAuthStep('step-signup')">New here? Create an account</div>
+    </div>
+
+    <!-- STEP: FORGOT PASSWORD -->
+    <div class="auth-card auth-step" id="step-forgot">
+      <div class="auth-step-header">
+        <button class="auth-back-btn" onclick="showAuthStep('step-signin')"><i class="ti ti-arrow-left"></i></button>
+        <div class="auth-step-title">Reset your password</div>
+      </div>
+      <div class="auth-landing-copy">Enter the email on your account and we'll send a reset link.</div>
+      <div class="auth-form">
+        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="forgotEmail" placeholder="you@company.com"></div>
+        <button class="btn-login" id="forgotSubmitBtn" onclick="doForgotPassword()"><i class="ti ti-send"></i> Send reset link<div class="spinner" id="forgotSpinner"></div></button>
+        <div class="auth-error" id="forgotError"></div>
+      </div>
+    </div>
+
+    <!-- STEP: FORGOT SENT -->
+    <div class="auth-card auth-step" id="step-forgot-sent">
+      <div class="auth-icon-badge"><i class="ti ti-mail-check"></i></div>
+      <div class="auth-step-title" style="text-align:center;">Reset link sent</div>
+      <div class="auth-landing-copy">Check your email for a link to reset your password. It may take a minute to arrive.</div>
+      <div class="login-hint auth-link" onclick="showAuthStep('step-signin')">Back to sign in</div>
+    </div>
+
+    <!-- STEP: RESET PASSWORD (reached via emailed link) -->
+    <div class="auth-card auth-step" id="step-reset">
+      <div class="auth-step-title">Set a new password</div>
+      <div class="auth-form">
+        <div class="form-group">
+          <label class="form-label">New password</label>
+          <div class="pw-input-wrap">
+            <input type="password" class="form-input" id="resetPassword" placeholder="Create a strong password" oninput="updatePwStrength('resetPassword','resetStrengthFill','resetStrengthLabel')">
+            <button type="button" class="pw-toggle" onclick="togglePw('resetPassword',this)"><i class="ti ti-eye"></i></button>
+          </div>
+          <div class="pw-strength-track"><div class="pw-strength-fill" id="resetStrengthFill"></div></div>
+          <div class="pw-strength-label" id="resetStrengthLabel">Enter a password</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm new password</label>
+          <div class="pw-input-wrap">
+            <input type="password" class="form-input" id="resetConfirm" placeholder="Re-enter your password">
+            <button type="button" class="pw-toggle" onclick="togglePw('resetConfirm',this)"><i class="ti ti-eye"></i></button>
+          </div>
+        </div>
+        <button class="btn-login" id="resetSubmitBtn" onclick="doResetPassword()"><i class="ti ti-check"></i> Update password<div class="spinner" id="resetSpinner"></div></button>
+        <div class="auth-error" id="resetError"></div>
+      </div>
+    </div>
+
+    <!-- STEP: WORKSPACE SETUP (first login only) -->
+    <div class="auth-card auth-step" id="step-workspace">
+      <div class="auth-icon-badge"><i class="ti ti-briefcase"></i></div>
+      <div class="auth-step-title" style="text-align:center;">Set up your workspace</div>
+      <div class="auth-landing-copy">Just a couple of details to personalize your dashboard.</div>
+      <div class="auth-form">
+        <div class="form-group"><label class="form-label">Your name</label><input type="text" class="form-input" id="wsName" placeholder="Jane Doe"></div>
+        <div class="form-group"><label class="form-label">Organization <span style="color:var(--text3);font-weight:400;">(optional)</span></label><input type="text" class="form-input" id="wsOrg" placeholder="Acme Inc."></div>
+        <button class="btn-login" id="wsSubmitBtn" onclick="completeWorkspaceSetup()"><i class="ti ti-arrow-right"></i> Continue to dashboard<div class="spinner" id="wsSpinner"></div></button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -781,61 +955,187 @@ const SUPABASE_URL = "https://bsikedfzqmzptjtsnbff.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzaWtlZGZ6cW16cHRqdHNuYmZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NDQ5MzUsImV4cCI6MjA5OTMyMDkzNX0.5NWYL3q8_jH6Uua0CL-WMmncqHPKoSinXS4NQD35TGU";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
-let authMode = 'login'; // 'login' | 'signup'
 
-/* ============================= AUTH ============================= */
-function toggleAuthMode(){
-  authMode = authMode==='login' ? 'signup' : 'login';
-  const btn = document.getElementById('loginSubmitBtn');
-  const hint = document.getElementById('authToggleHint');
-  if(authMode==='signup'){
-    btn.innerHTML = '<i class="ti ti-user-plus"></i> Create account';
-    hint.textContent = 'Already have an account? Sign in';
-  } else {
-    btn.innerHTML = '<i class="ti ti-login-2"></i> Sign in to dashboard';
-    hint.textContent = 'New here? Create an account';
-  }
-  document.getElementById('authError').style.display = 'none';
+/* ============================= AUTH: STEP NAVIGATION ============================= */
+function showAuthStep(stepId){
+  document.querySelectorAll('.auth-step').forEach(s=>s.classList.remove('active'));
+  const el = document.getElementById(stepId);
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.auth-error').forEach(e=>{ e.classList.remove('visible'); e.textContent=''; });
 }
 
-function showAuthError(msg){
-  const el = document.getElementById('authError');
+function showAuthError(fieldErrorId, msg){
+  const el = document.getElementById(fieldErrorId);
+  if(!el) return;
   el.textContent = msg;
-  el.style.display = 'block';
+  el.classList.add('visible');
 }
 
+function setBtnLoading(btnId, spinnerId, loading){
+  const btn = document.getElementById(btnId);
+  const spinner = document.getElementById(spinnerId);
+  if(btn) btn.disabled = loading;
+  if(spinner) spinner.style.display = loading ? 'inline-block' : 'none';
+}
+
+/* ============================= PASSWORD STRENGTH & VISIBILITY ============================= */
+function togglePw(inputId, btn){
+  const input = document.getElementById(inputId);
+  const icon = btn.querySelector('i');
+  if(input.type === 'password'){
+    input.type = 'text';
+    icon.className = 'ti ti-eye-off';
+  } else {
+    input.type = 'password';
+    icon.className = 'ti ti-eye';
+  }
+}
+
+function scorePassword(pw){
+  let score = 0;
+  if(!pw) return 0;
+  if(pw.length >= 8) score += 25;
+  if(pw.length >= 12) score += 15;
+  if(/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 20;
+  if(/[0-9]/.test(pw)) score += 20;
+  if(/[^a-zA-Z0-9]/.test(pw)) score += 20;
+  return Math.min(score, 100);
+}
+
+function updatePwStrength(inputId, fillId, labelId){
+  inputId = inputId || 'signupPassword';
+  fillId = fillId || 'pwStrengthFill';
+  labelId = labelId || 'pwStrengthLabel';
+  const pw = document.getElementById(inputId).value;
+  const score = scorePassword(pw);
+  const fill = document.getElementById(fillId);
+  const label = document.getElementById(labelId);
+  fill.style.width = score + '%';
+  if(!pw){ fill.style.background='var(--red)'; label.textContent='Enter a password'; return; }
+  if(score < 40){ fill.style.background='var(--red)'; label.textContent='Weak — try adding numbers and symbols'; }
+  else if(score < 70){ fill.style.background='var(--amber)'; label.textContent='Fair — add uppercase or a symbol'; }
+  else if(score < 90){ fill.style.background='var(--blue)'; label.textContent='Good password'; }
+  else { fill.style.background='var(--green)'; label.textContent='Strong password'; }
+}
+
+/* ============================= OAUTH ============================= */
+async function oauthLogin(provider){
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if(error) showToast(provider+' sign-in failed: '+error.message, 'error');
+}
+
+/* ============================= SIGN UP ============================= */
+async function doSignup(){
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const confirm = document.getElementById('signupConfirm').value;
+
+  if(!email || !password){ showAuthError('signupError','Enter an email and password.'); return; }
+  if(password.length < 8){ showAuthError('signupError','Password must be at least 8 characters.'); return; }
+  if(password !== confirm){ showAuthError('signupError','Passwords do not match.'); return; }
+
+  setBtnLoading('signupSubmitBtn','signupSpinner',true);
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  setBtnLoading('signupSubmitBtn','signupSpinner',false);
+
+  if(error){ showAuthError('signupError', error.message); return; }
+
+  if(data.session){
+    // Email confirmation is off in the Supabase project — go straight into workspace setup
+    currentUser = data.user;
+    showAuthStep('step-workspace');
+  } else {
+    document.getElementById('verifyEmailText').textContent = 'We sent a verification link to '+email+'. Click it to activate your account, then come back and sign in.';
+    showAuthStep('step-verify');
+  }
+}
+
+async function resendVerification(){
+  const emailField = document.getElementById('signupEmail');
+  const email = (emailField && emailField.value.trim()) || '';
+  if(!email){ showToast('Go back and enter your email again to resend.', 'error'); return; }
+  const { error } = await supabaseClient.auth.resend({ type:'signup', email });
+  if(error) showToast('Could not resend: '+error.message, 'error');
+  else showToast('Verification email resent.', 'success');
+}
+
+/* ============================= SIGN IN ============================= */
 async function doLogin(){
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  if(!email || !password){ showAuthError('Enter an email and password.'); return; }
+  if(!email || !password){ showAuthError('authError','Enter an email and password.'); return; }
 
-  const btn = document.getElementById('loginSubmitBtn');
-  btn.disabled = true;
-  document.getElementById('authError').style.display = 'none';
-
-  if(authMode==='signup'){
-    const { data, error } = await supabaseClient.auth.signUp({ email, password });
-    btn.disabled = false;
-    if(error){ showAuthError(error.message); return; }
-    if(data.session){
-      // Email confirmation is off — signed in immediately
-      enterApp(data.user);
-    } else {
-      showAuthError('Account created — check your email to confirm, then sign in.');
-      toggleAuthMode();
-    }
-    return;
-  }
-
+  setBtnLoading('loginSubmitBtn','loginSpinner',true);
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  btn.disabled = false;
-  if(error){ showAuthError(error.message); return; }
+  setBtnLoading('loginSubmitBtn','loginSpinner',false);
+
+  if(error){ showAuthError('authError', error.message); return; }
   enterApp(data.user);
 }
 
+/* ============================= FORGOT / RESET PASSWORD ============================= */
+async function doForgotPassword(){
+  const email = document.getElementById('forgotEmail').value.trim();
+  if(!email){ showAuthError('forgotError','Enter your account email.'); return; }
+
+  setBtnLoading('forgotSubmitBtn','forgotSpinner',true);
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  setBtnLoading('forgotSubmitBtn','forgotSpinner',false);
+
+  if(error){ showAuthError('forgotError', error.message); return; }
+  showAuthStep('step-forgot-sent');
+}
+
+async function doResetPassword(){
+  const pw = document.getElementById('resetPassword').value;
+  const confirm = document.getElementById('resetConfirm').value;
+  if(pw.length < 8){ showAuthError('resetError','Password must be at least 8 characters.'); return; }
+  if(pw !== confirm){ showAuthError('resetError','Passwords do not match.'); return; }
+
+  setBtnLoading('resetSubmitBtn','resetSpinner',true);
+  const { data, error } = await supabaseClient.auth.updateUser({ password: pw });
+  setBtnLoading('resetSubmitBtn','resetSpinner',false);
+
+  if(error){ showAuthError('resetError', error.message); return; }
+  showToast('Password updated — signing you in.', 'success');
+  enterApp(data.user);
+}
+
+/* ============================= WORKSPACE SETUP (first login only) ============================= */
+async function completeWorkspaceSetup(){
+  const name = document.getElementById('wsName').value.trim();
+  const org = document.getElementById('wsOrg').value.trim();
+
+  setBtnLoading('wsSubmitBtn','wsSpinner',true);
+  const { data, error } = await supabaseClient.auth.updateUser({
+    data: { full_name: name || null, organization: org || null, workspace_setup_done: true }
+  });
+  setBtnLoading('wsSubmitBtn','wsSpinner',false);
+
+  if(error){ showToast('Could not save workspace details: '+error.message,'error'); }
+  if(data && data.user) currentUser = data.user;
+  finishEnterApp(currentUser);
+}
+
+/* ============================= APP ENTRY ============================= */
 function enterApp(user){
   currentUser = user;
-  const label = user.email || 'User';
+  // First-time users (fresh signup, or OAuth users who've never set up a workspace) see setup once
+  const alreadySetUp = user.user_metadata && user.user_metadata.workspace_setup_done;
+  if(!alreadySetUp){
+    showAuthStep('step-workspace');
+    return;
+  }
+  finishEnterApp(user);
+}
+
+function finishEnterApp(user){
+  const label = (user.user_metadata && user.user_metadata.full_name) || user.email || 'User';
   document.getElementById('userName').textContent = label;
   document.getElementById('userAvatar').textContent = label.charAt(0).toUpperCase();
   document.getElementById('loginScreen').style.display = 'none';
@@ -849,17 +1149,27 @@ async function doLogout(){
   history = [];
   document.getElementById('app').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
+  showAuthStep('step-landing');
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
 }
 
-/* Restore an existing session on page load (so refreshing doesn't log you out) */
+/* Restore an existing session on page load (so refreshing doesn't log you out),
+   and detect a password-recovery link (emailed reset link lands back here). */
 async function checkExistingSession(){
+  document.getElementById('loginScreen').style.display = 'flex';
+
+  supabaseClient.auth.onAuthStateChange((event, session)=>{
+    if(event === 'PASSWORD_RECOVERY'){
+      showAuthStep('step-reset');
+    }
+  });
+
   const { data:{ session } } = await supabaseClient.auth.getSession();
-  if(session && session.user){
+  if(session && session.user && !window.location.hash.includes('type=recovery')){
     enterApp(session.user);
-  } else {
-    document.getElementById('loginScreen').style.display = 'flex';
+  } else if(!window.location.hash.includes('type=recovery')){
+    showAuthStep('step-landing');
   }
 }
 
@@ -2258,6 +2568,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('promptInput').addEventListener('blur',(e)=>{ if(e.target.value.trim()) applyAutocorrect(e.target.value); });
   document.getElementById('loginEmail').addEventListener('keydown',e=>e.key==='Enter'&&document.getElementById('loginPassword').focus());
   document.getElementById('loginPassword').addEventListener('keydown',e=>e.key==='Enter'&&doLogin());
+  document.getElementById('signupConfirm').addEventListener('keydown',e=>e.key==='Enter'&&doSignup());
+  document.getElementById('forgotEmail').addEventListener('keydown',e=>e.key==='Enter'&&doForgotPassword());
+  document.getElementById('resetConfirm').addEventListener('keydown',e=>e.key==='Enter'&&doResetPassword());
+  document.getElementById('wsName').addEventListener('keydown',e=>e.key==='Enter'&&completeWorkspaceSetup());
   loadOllamaSettings();
   checkExistingSession();
 
