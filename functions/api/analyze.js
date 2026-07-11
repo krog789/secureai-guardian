@@ -32,10 +32,6 @@ export async function onRequestOptions() {
   return withCORS(null, 204);
 }
 
-// Handles a simple connectivity check (e.g. a "Test Cloud AI" button doing
-// a plain GET/ping instead of a real analysis POST). Without this handler,
-// any GET request to this URL returns HTTP 405, even though the POST
-// handler below works perfectly fine for real analysis requests.
 export async function onRequestGet(context) {
   const { env } = context;
   return withCORS(JSON.stringify({
@@ -45,6 +41,61 @@ export async function onRequestGet(context) {
       : "Endpoint is reachable, but the 'AI' binding is not configured in Pages Settings → Functions → Bindings.",
     model: "@cf/zai-org/glm-4.7-flash"
   }), 200);
+}
+
+// Tries every common shape Workers AI model responses come back in, in
+// order, and returns the first non-empty text found. Different model
+// families on Cloudflare's catalog place the generated text in different
+// fields (plain .response, OpenAI-style .choices[0].message.content,
+// .result, or occasionally the raw string itself) - this covers all of
+// them instead of assuming just one.
+function extractText(aiResponse) {
+  if (!aiResponse) return "";
+  if (typeof aiResponse === "string") return aiResponse;
+
+  const candidates = [
+    aiResponse.response,
+    aiResponse.result,
+    aiResponse.output_text,
+    aiResponse.text,
+    aiResponse?.choices?.[0]?.message?.content,
+    aiResponse?.choices?.[0]?.text,
+    aiResponse?.result?.response,
+    Array.isArray(aiResponse?.content) ? aiResponse.content.map(c => c?.text || "").join("") : null,
+  ];
+
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim().length > 0) return c;
+  }
+  return "";
+}
+
+// Extracts the first complete {...} JSON object from a string, tolerant of
+// extra text/markdown fences before or after it.
+function extractJson(text) {
+  let cleaned = text.trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
+  }
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
+  if (first === -1 || last === -1 || last <= first) return null;
+  try {
+    return JSON.parse(cleaned.slice(first, last + 1));
+  } catch (e) {
+    return null;
+  }
+}
+
+function clampResult(parsed) {
+  if (!CATEGORIES.includes(parsed.category)) parsed.category = "General / Benign";
+  parsed.risk_score = Math.max(0, Math.min(100, parseInt(parsed.risk_score, 10) || 0));
+  parsed.confidence = Math.max(0, Math.min(100, parseInt(parsed.confidence, 10) || 50));
+  if (!["None","Low","Medium","High","Critical"].includes(parsed.risk_level)) parsed.risk_level = "Low";
+  if (!["Allow","Warn","Restrict","Block"].includes(parsed.decision)) parsed.decision = "Allow";
+  if (!parsed.intent_analysis) parsed.intent_analysis = "AI-based classification completed.";
+  if (!Array.isArray(parsed.reasons)) parsed.reasons = [];
+  return parsed;
 }
 
 export async function onRequestPost(context) {
@@ -71,51 +122,59 @@ export async function onRequestPost(context) {
     promptText = promptText.slice(0, 5000);
   }
 
+  const messages = [
+    { role: "system", content: SYSTEM_INSTRUCTION },
+    { role: "user", content: 'Classify this prompt:\n\n"""' + promptText + '"""' }
+  ];
+
+  // Try the messages-based call first, then fall back to a plain prompt-
+  // based call if the model/binding doesn't like the messages format for
+  // some reason - this removes another category of silent failure.
+  let aiResponse;
+  let callError = null;
   try {
-    const aiResponse = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
-      messages: [
-        { role: "system", content: SYSTEM_INSTRUCTION },
-        { role: "user", content: 'Classify this prompt:\n\n"""' + promptText + '"""' }
-      ],
-      max_tokens: 512
-    });
-
-    const raw = (aiResponse && aiResponse.response) || "";
-    // Non-greedy-safe extraction: find the first { and its matching last }
-    // that still parses. Falls back to the old greedy match if this fails.
-    let parsed = null;
-    const firstBrace = raw.indexOf("{");
-    const lastBrace = raw.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      try {
-        parsed = JSON.parse(raw.slice(firstBrace, lastBrace + 1));
-      } catch (e) {
-        parsed = null;
-      }
-    }
-    if (!parsed) {
-      // DIAGNOSTIC: include the ENTIRE raw object Workers AI returned (not
-      // just the .response field) so we can see its real shape. Some model
-      // families return the text under a different key, or as structured
-      // tool-call output instead of plain .response text.
-      return withCORS(JSON.stringify({
-        error: "AI model did not return valid JSON in .response.",
-        raw,
-        full_ai_response_object: aiResponse
-      }), 502);
-    }
-
-    // Basic validation/clamping so a malformed model response can't crash the frontend
-    if (!CATEGORIES.includes(parsed.category)) parsed.category = "General / Benign";
-    parsed.risk_score = Math.max(0, Math.min(100, parseInt(parsed.risk_score, 10) || 0));
-    parsed.confidence = Math.max(0, Math.min(100, parseInt(parsed.confidence, 10) || 50));
-    if (!["None","Low","Medium","High","Critical"].includes(parsed.risk_level)) parsed.risk_level = "Low";
-    if (!["Allow","Warn","Restrict","Block"].includes(parsed.decision)) parsed.decision = "Allow";
-    if (!parsed.intent_analysis) parsed.intent_analysis = "AI-based classification completed.";
-    if (!Array.isArray(parsed.reasons)) parsed.reasons = [];
-
-    return withCORS(JSON.stringify(parsed), 200);
+    aiResponse = await env.AI.run("@cf/zai-org/glm-4.7-flash", { messages, max_tokens: 512 });
   } catch (err) {
-    return withCORS(JSON.stringify({ error: "AI request failed: " + (err && err.message ? err.message : String(err)) }), 500);
+    callError = err;
   }
+
+  let raw = callError ? "" : extractText(aiResponse);
+
+  if (!raw) {
+    try {
+      const flatPrompt = SYSTEM_INSTRUCTION + '\n\nClassify this prompt:\n\n"""' + promptText + '"""';
+      aiResponse = await env.AI.run("@cf/zai-org/glm-4.7-flash", { prompt: flatPrompt, max_tokens: 512 });
+      raw = extractText(aiResponse);
+      callError = null;
+    } catch (err) {
+      callError = err;
+    }
+  }
+
+  if (callError) {
+    return withCORS(JSON.stringify({
+      error: "AI request failed: " + (callError.message || String(callError))
+    }), 500);
+  }
+
+  let parsed = raw ? extractJson(raw) : null;
+
+  if (!parsed) {
+    // Graceful degradation: rather than a hard error the user has to
+    // interpret, return a valid, clearly-labeled fallback result so the
+    // page always shows something usable, plus full diagnostics for us to
+    // read if it keeps happening.
+    return withCORS(JSON.stringify({
+      category: "General / Benign",
+      risk_score: 0,
+      risk_level: "Low",
+      decision: "Allow",
+      confidence: 0,
+      intent_analysis: "Cloud AI did not return a parseable classification for this prompt. This result is a safe placeholder, not a real analysis - falling back to the rule-based engine is recommended until this is resolved.",
+      reasons: ["cloud_ai_parse_failed"],
+      _debug: { raw_text_found: raw, full_ai_response_object: aiResponse }
+    }), 200);
+  }
+
+  return withCORS(JSON.stringify(clampResult(parsed)), 200);
 }
