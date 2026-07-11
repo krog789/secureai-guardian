@@ -94,7 +94,15 @@ export async function onRequestPost(context) {
       }
     }
     if (!parsed) {
-      return withCORS(JSON.stringify({ error: "AI model did not return valid JSON.", raw }), 502);
+      // DIAGNOSTIC: include the ENTIRE raw object Workers AI returned (not
+      // just the .response field) so we can see its real shape. Some model
+      // families return the text under a different key, or as structured
+      // tool-call output instead of plain .response text.
+      return withCORS(JSON.stringify({
+        error: "AI model did not return valid JSON in .response.",
+        raw,
+        full_ai_response_object: aiResponse
+      }), 502);
     }
 
     // Basic validation/clamping so a malformed model response can't crash the frontend
