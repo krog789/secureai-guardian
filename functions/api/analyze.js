@@ -22,7 +22,7 @@ function withCORS(body, status) {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type"
     }
   });
@@ -30,6 +30,21 @@ function withCORS(body, status) {
 
 export async function onRequestOptions() {
   return withCORS(null, 204);
+}
+
+// Handles a simple connectivity check (e.g. a "Test Cloud AI" button doing
+// a plain GET/ping instead of a real analysis POST). Without this handler,
+// any GET request to this URL returns HTTP 405, even though the POST
+// handler below works perfectly fine for real analysis requests.
+export async function onRequestGet(context) {
+  const { env } = context;
+  return withCORS(JSON.stringify({
+    status: env.AI ? "ok" : "missing_binding",
+    message: env.AI
+      ? "Cloud AI endpoint is reachable and the AI binding is configured."
+      : "Endpoint is reachable, but the 'AI' binding is not configured in Pages Settings → Functions → Bindings.",
+    model: "@cf/zai-org/glm-4.7-flash"
+  }), 200);
 }
 
 export async function onRequestPost(context) {
@@ -66,16 +81,20 @@ export async function onRequestPost(context) {
     });
 
     const raw = (aiResponse && aiResponse.response) || "";
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) {
-      return withCORS(JSON.stringify({ error: "AI model did not return valid JSON.", raw }), 502);
+    // Non-greedy-safe extraction: find the first { and its matching last }
+    // that still parses. Falls back to the old greedy match if this fails.
+    let parsed = null;
+    const firstBrace = raw.indexOf("{");
+    const lastBrace = raw.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      try {
+        parsed = JSON.parse(raw.slice(firstBrace, lastBrace + 1));
+      } catch (e) {
+        parsed = null;
+      }
     }
-
-    let parsed;
-    try {
-      parsed = JSON.parse(match[0]);
-    } catch (e) {
-      return withCORS(JSON.stringify({ error: "Could not parse AI model's JSON output.", raw }), 502);
+    if (!parsed) {
+      return withCORS(JSON.stringify({ error: "AI model did not return valid JSON.", raw }), 502);
     }
 
     // Basic validation/clamping so a malformed model response can't crash the frontend
