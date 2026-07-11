@@ -133,7 +133,7 @@ export async function onRequestPost(context) {
   let aiResponse;
   let callError = null;
   try {
-    aiResponse = await env.AI.run("@cf/zai-org/glm-4.7-flash", { messages, max_tokens: 512 });
+    aiResponse = await env.AI.run("@cf/zai-org/glm-4.7-flash", { messages, max_tokens: 200 });
   } catch (err) {
     callError = err;
   }
@@ -143,7 +143,7 @@ export async function onRequestPost(context) {
   if (!raw) {
     try {
       const flatPrompt = SYSTEM_INSTRUCTION + '\n\nClassify this prompt:\n\n"""' + promptText + '"""';
-      aiResponse = await env.AI.run("@cf/zai-org/glm-4.7-flash", { prompt: flatPrompt, max_tokens: 512 });
+      aiResponse = await env.AI.run("@cf/zai-org/glm-4.7-flash", { prompt: flatPrompt, max_tokens: 200 });
       raw = extractText(aiResponse);
       callError = null;
     } catch (err) {
