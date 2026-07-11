@@ -65,7 +65,22 @@ export async function onRequestPost(context) {
       max_tokens: 300
     });
 
-    const raw = (aiResponse && aiResponse.response) || "";
+    // Workers AI usually returns { response: "text" }, but depending on the model
+    // it can occasionally return the parsed object directly, or nest it differently.
+    // Normalize whatever comes back into a plain string before regex-matching JSON out of it.
+    let raw = aiResponse && aiResponse.response;
+    if (raw && typeof raw === "object") {
+      // Model already returned structured data — use it directly if it looks right
+      if (raw.category || raw.risk_score !== undefined || raw.decision) {
+        raw = JSON.stringify(raw);
+      } else {
+        raw = JSON.stringify(raw);
+      }
+    }
+    if (typeof raw !== "string") {
+      raw = aiResponse ? JSON.stringify(aiResponse) : "";
+    }
+
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) {
       return withCORS(JSON.stringify({ error: "AI model did not return valid JSON.", raw }), 502);
