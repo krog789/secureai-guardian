@@ -45,6 +45,40 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+// Backend-side safety net, independent of what the AI model says. Some models
+// refuse to engage with obviously malicious multi-step attack prompts (their
+// own built-in safety training kicks in) and return a reply that doesn't match
+// our JSON schema at all — e.g. a plain refusal sentence. Previously that
+// caused every field to fall back to defaults, which meant "Allow / General /
+// Benign / Risk 0" — the worst possible fallback for a security tool: an AI
+// refusal or garbled response should never quietly resolve to "safe". This
+// keyword scan runs regardless of what the AI returns, and can only push a
+// verdict toward more caution, never less.
+const RED_FLAGS = [
+  { category: "Prompt Injection", phrases: ["ignore all previous instructions", "ignore previous instructions", "disregard previous instructions", "ignore your instructions", "override your instructions"] },
+  { category: "Jailbreak Attempt", phrases: ["developer mode", "unrestricted mode", "unrestricted developer", "no restrictions", "without restrictions", "no safety rules", "no ethical guidelines", "act as dan", "do anything now"] },
+  { category: "Malware / Cyberattack Request", phrases: ["malware", "ransomware", "keylogger", "trojan", "rootkit", "botnet", "shellcode", "reverse shell", "powershell payload", "downloads and executes", "bypass antivirus", "bypass windows defender", "evade detection", "remain persistent after reboot", "maintain persistence"] },
+  { category: "Phishing", phrases: ["phishing email", "fake login page", "captures usernames", "captures passwords", "steal microsoft 365 credentials", "steal login credentials", "clone website to steal"] },
+  { category: "Data Exfiltration", phrases: ["sql injection", "dump all user", "dump the database", "exfiltrate data", "extract all records"] },
+  { category: "Credential Theft", phrases: ["steal credentials", "steal password", "steal api key", "steal session cookie", "steal auth token"] },
+  { category: "Financial Fraud / Account Hacking", phrases: ["compromise a corporate network", "compromise the network", "attack plan to compromise", "hack into", "hack someone", "break into someone's account", "escalate privileges after"] },
+];
+
+function scanForRedFlags(promptText) {
+  const lower = " " + promptText.toLowerCase().replace(/\s+/g, " ") + " ";
+  const matched = [];
+  const reasons = [];
+  for (const group of RED_FLAGS) {
+    for (const phrase of group.phrases) {
+      if (lower.includes(phrase)) {
+        if (!matched.includes(group.category)) matched.push(group.category);
+        reasons.push('Detected phrase indicating ' + group.category + ': "' + phrase + '"');
+      }
+    }
+  }
+  return { matched, reasons: reasons.slice(0, 8) };
+}
+
 function withCORS(body, status) {
   return new Response(body, {
     status: status || 200,
@@ -151,7 +185,7 @@ export async function onRequestPost(context) {
             : [],
       };
 
-      // Safety net: if the model picked a zero-tolerance category but somehow
+      // Safety net #1: if the model picked a zero-tolerance category but somehow
       // still scored it low, correct the severity rather than trusting an
       // internally inconsistent verdict. This can't downgrade a real threat,
       // only upgrade one the model itself already identified but under-scored.
@@ -161,10 +195,53 @@ export async function onRequestPost(context) {
         result.decision = "Block";
       }
 
+      // Safety net #2: independent keyword scan. If the AI landed on a low-risk
+      // verdict (often what happens when a model refuses to properly engage
+      // with an obvious attack-plan prompt and we fell back to defaults) but
+      // the prompt itself contains clear attack indicators, override toward
+      // caution. This never downgrades a verdict the AI already flagged.
+      if (result.risk_score < 70) {
+        const scan = scanForRedFlags(prompt);
+        if (scan.matched.length >= 2 || (scan.matched.length === 1 && scan.reasons.length >= 2)) {
+          result.category = scan.matched[0];
+          result.risk_score = 85;
+          result.risk_level = "Critical";
+          result.decision = "Block";
+          result.intent_analysis =
+            "Automated keyword safety check detected explicit indicators of " + scan.matched.join(", ") +
+            " in this prompt. This overrides a lower or non-committal AI-assigned score.";
+          result.reasons = scan.reasons;
+        }
+      }
+
       return withCORS(JSON.stringify(result), 200);
     } catch (err) {
       lastErr = { error: "AI_CALL_FAILED", message: String((err && err.message) || err), model };
     }
+  }
+
+  // If every model failed to produce a usable classification (e.g. all of them
+  // refused to engage with the prompt), don't just return a bare error — run
+  // the same keyword safety net. An AI refusing to answer is itself a signal,
+  // and if the prompt also contains clear attack indicators we can still give
+  // the user a correct, cautious verdict instead of nothing at all.
+  const fallbackScan = scanForRedFlags(prompt);
+  if (fallbackScan.matched.length) {
+    return withCORS(
+      JSON.stringify({
+        category: fallbackScan.matched[0],
+        risk_score: 85,
+        risk_level: "Critical",
+        decision: "Block",
+        confidence: 70,
+        intent_analysis:
+          "The AI model did not return a usable classification for this prompt (it may have refused to engage with it), " +
+          "but an automated keyword safety check detected explicit indicators of " + fallbackScan.matched.join(", ") +
+          ". Blocking out of caution rather than defaulting to Allow.",
+        reasons: fallbackScan.reasons,
+      }),
+      200
+    );
   }
 
   return withCORS(JSON.stringify(lastErr || { error: "AI_CALL_FAILED", message: "All models failed." }), 500);
