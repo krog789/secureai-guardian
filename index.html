@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureAI Guardian — AI Governance & Cybersecurity Platform</title>
+<meta name="description" content="SecureAI Guardian detects prompt injection, jailbreaks, data leakage and unsafe AI outputs before they reach your users — with explainable risk scoring and full audit logging.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1120;
+    --panel:#121A2B;
+    --panel-alt:#17203A;
+    --border:#253150;
+    --border-soft:#1B2540;
+    --text:#E8ECF4;
+    --muted:#8B96AD;
+    --muted-dim:#5C6A87;
+    --amber:#F5A623;
+    --amber-dim:#7A5518;
+    --teal:#2DD4BF;
+    --red:#EF4444;
+    --radius:10px;
+    --maxw:1200px;
+  }
+
+  /* ============ CONFIG ============
+     Set this to the exact URL/path of your EXISTING, unchanged login page.
+     Nothing else in this file needs to change. */
+  :root{ --app-url: "/app/login.html"; }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important;}
+  }
+
+  h1,h2,h3,h4{ font-family:'Space Grotesk',sans-serif; letter-spacing:-0.01em; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+
+  a{ color:inherit; text-decoration:none; }
+  img{ max-width:100%; display:block; }
+  button{ font:inherit; cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--teal); outline-offset:3px; }
+
+  .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 32px; }
+  section{ position:relative; }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--teal);
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:16px;
+  }
+  .eyebrow::before{ content:""; width:16px; height:1px; background:var(--teal); }
+  .section-head{ max-width:640px; margin-bottom:48px; }
+  .section-head h2{ font-size:clamp(28px,3.4vw,40px); font-weight:600; margin-bottom:14px; }
+  .section-head p{ color:var(--muted); font-size:16.5px; }
+  .section-pad{ padding:110px 0; border-bottom:1px solid var(--border-soft); }
+
+  /* ---------- Background grid texture ---------- */
+  .grid-texture{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(var(--border-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+    background-size:64px 64px;
+    opacity:0.35;
+    mask-image:radial-gradient(ellipse 80% 60% at 50% 0%, black 10%, transparent 70%);
+  }
+
+  /* ============ NAV ============ */
+  header.nav{
+    position:sticky; top:0; z-index:100;
+    background:rgba(11,17,32,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border-soft);
+  }
+  .nav-inner{
+    max-width:var(--maxw); margin:0 auto; padding:16px 32px;
+    display:flex; align-items:center; justify-content:space-between; gap:24px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; font-weight:600; font-size:17px; }
+  .brand .mark{
+    width:30px; height:30px; border-radius:7px;
+    background:linear-gradient(155deg, var(--teal), #1a8f80);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 1px var(--border), 0 0 18px rgba(45,212,191,0.25);
+  }
+  .brand .mark svg{ width:16px; height:16px; }
+  .nav-links{ display:flex; align-items:center; gap:30px; font-size:14.5px; color:var(--muted); }
+  .nav-links a{ transition:color .15s ease; white-space:nowrap; }
+  .nav-links a:hover{ color:var(--text); }
+  .nav-cta{ display:flex; align-items:center; gap:14px; }
+  .nav-links-mobile-toggle{ display:none; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:11px 20px; border-radius:7px; font-weight:600; font-size:14.5px;
+    border:1px solid transparent; transition:all .15s ease; white-space:nowrap;
+  }
+  .btn-primary{ background:var(--teal); color:#062421; }
+  .btn-primary:hover{ background:#4fe3d0; transform:translateY(-1px); box-shadow:0 6px 20px rgba(45,212,191,0.28); }
+  .btn-ghost{ background:transparent; color:var(--text); border-color:var(--border); }
+  .btn-ghost:hover{ border-color:var(--teal); color:var(--teal); }
+  .btn-sm{ padding:8px 14px; font-size:13px; }
+
+  /* ============ HERO ============ */
+  .hero{ padding:96px 0 110px; position:relative; z-index:1; }
+  .hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:56px; align-items:center; }
+  .hero h1{ font-size:clamp(38px,5vw,58px); font-weight:700; line-height:1.05; margin-bottom:20px; }
+  .hero h1 .accent{ color:var(--teal); }
+  .hero .tagline{ font-size:19px; color:var(--muted); max-width:520px; margin-bottom:34px; }
+  .hero-actions{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:40px; }
+  .hero-stats{ display:flex; gap:36px; flex-wrap:wrap; }
+  .hero-stat .num{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; color:var(--text); }
+  .hero-stat .label{ font-size:12.5px; color:var(--muted-dim); text-transform:uppercase; letter-spacing:0.08em; margin-top:2px; }
+
+  /* ---- console signature element ---- */
+  .console{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    overflow:hidden; box-shadow:0 30px 60px -25px rgba(0,0,0,0.6);
+  }
+  .console-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:11px 16px; border-bottom:1px solid var(--border); background:var(--panel-alt);
+  }
+  .console-bar .dots{ display:flex; gap:6px; }
+  .console-bar .dots span{ width:9px; height:9px; border-radius:50%; background:var(--border); }
+  .console-bar .title{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); }
+  .console-body{ padding:20px 18px; font-family:'IBM Plex Mono',monospace; font-size:13px; min-height:300px; }
+  .console-line{ display:flex; gap:10px; padding:6px 0; opacity:0; animation:consoleIn .4s ease forwards; border-bottom:1px dashed var(--border-soft); }
+  .console-line:last-child{ border-bottom:none; }
+  .console-line .tag{ color:var(--muted-dim); flex-shrink:0; width:78px; }
+  .console-line .val{ color:var(--text); }
+  .console-line.warn .val{ color:var(--amber); }
+  .console-line.danger .val{ color:var(--red); }
+  .console-line.ok .val{ color:var(--teal); }
+  @keyframes consoleIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+  .console-score{
+    margin-top:14px; padding:14px; border:1px solid var(--border); border-radius:8px;
+    display:flex; align-items:center; justify-content:space-between; background:var(--panel-alt);
+    opacity:0; animation:consoleIn .4s ease forwards;
+  }
+  .console-score .lbl{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
+  .console-score .score{ font-size:24px; font-weight:600; color:var(--teal); }
+  .pulse-dot{ width:7px; height:7px; border-radius:50%; background:var(--teal); display:inline-block; animation:pulse 1.6s infinite; margin-right:6px; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* ============ CARD GRIDS ============ */
+  .grid{ display:grid; gap:20px; }
+  .grid-4{ grid-template-columns:repeat(4,1fr); }
+  .grid-3{ grid-template-columns:repeat(3,1fr); }
+  .grid-2{ grid-template-columns:repeat(2,1fr); }
+
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:26px; transition:border-color .2s ease, transform .2s ease;
+  }
+  .card:hover{ border-color:var(--teal); transform:translateY(-3px); }
+  .card .icon{
+    width:38px; height:38px; border-radius:8px; background:var(--panel-alt);
+    border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+    margin-bottom:16px; color:var(--teal);
+  }
+  .card .icon svg{ width:19px; height:19px; }
+  .card h3{ font-size:16.5px; font-weight:600; margin-bottom:8px; }
+  .card p{ font-size:14px; color:var(--muted); }
+
+  .reveal{ opacity:0; transform:translateY(18px); transition:opacity .55s ease, transform .55s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+
+  /* ============ ABOUT ============ */
+  .about-grid{ display:grid; grid-template-columns:0.9fr 1.1fr; gap:60px; align-items:start; }
+  .about-copy p{ color:var(--muted); margin-bottom:16px; font-size:15.5px; }
+  .about-copy strong{ color:var(--text); }
+  .risk-strip{ display:flex; flex-direction:column; gap:10px; }
+  .risk-item{
+    display:flex; align-items:center; gap:14px; padding:14px 16px;
+    background:var(--panel); border:1px solid var(--border); border-radius:8px;
+  }
+  .risk-item .n{ font-family:'IBM Plex Mono',monospace; color:var(--red); font-size:13px; width:20px; flex-shrink:0; }
+  .risk-item span.txt{ font-size:14.5px; color:var(--text); }
+
+  /* ============ WHO CAN BENEFIT ============ */
+  .benefit-card{ text-align:left; }
+
+  /* ============ VICTIMS ============ */
+  .victims-list{ display:flex; flex-direction:column; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .victim-row{
+    display:grid; grid-template-columns:200px 1fr; gap:24px; padding:22px 26px;
+    border-bottom:1px solid var(--border-soft); background:var(--panel);
+  }
+  .victim-row:last-child{ border-bottom:none; }
+  .victim-row .who{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--amber); }
+  .victim-row .what{ font-size:14.5px; color:var(--muted); }
+
+  /* ============ WORKFLOW ============ */
+  .workflow{ max-width:620px; margin:0 auto; position:relative; }
+  .workflow::before{
+    content:""; position:absolute; left:23px; top:14px; bottom:14px; width:1px;
+    background:linear-gradient(var(--teal), var(--border) 90%);
+  }
+  .wf-step{ display:flex; gap:22px; padding-bottom:38px; position:relative; }
+  .wf-step:last-child{ padding-bottom:0; }
+  .wf-num{
+    width:48px; height:48px; border-radius:50%; background:var(--panel); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace;
+    font-size:14px; color:var(--teal); flex-shrink:0; z-index:1; transition:border-color .3s ease, box-shadow .3s ease;
+  }
+  .wf-step.in .wf-num{ border-color:var(--teal); box-shadow:0 0 0 4px rgba(45,212,191,0.12); }
+  .wf-content h4{ font-size:16px; margin-bottom:5px; padding-top:10px; }
+  .wf-content p{ font-size:14px; color:var(--muted); }
+
+  /* ============ TECH STACK ============ */
+  .stack-cols{ display:grid; grid-template-columns:repeat(5,1fr); gap:0; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .stack-col{ padding:24px 20px; border-right:1px solid var(--border-soft); background:var(--panel); }
+  .stack-col:last-child{ border-right:none; }
+  .stack-col h4{ font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted-dim); margin-bottom:14px; }
+  .stack-col ul{ list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .stack-col li{ font-size:14px; color:var(--text); display:flex; align-items:center; gap:8px; }
+  .stack-col li::before{ content:""; width:5px; height:5px; border-radius:50%; background:var(--teal); flex-shrink:0; }
+
+  /* ============ GALLERY ============ */
+  .gallery-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:22px; }
+  .shot{
+    position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border);
+    background:var(--panel); cursor:pointer; transition:transform .2s ease, border-color .2s ease;
+  }
+  .shot:hover{ transform:translateY(-4px); border-color:var(--teal); }
+  .shot-frame{
+    aspect-ratio:16/10; background:var(--panel-alt); display:flex; align-items:center; justify-content:center;
+    position:relative; overflow:hidden;
+  }
+  .shot-frame .mockbar{ position:absolute; top:0; left:0; right:0; height:26px; background:var(--ink); display:flex; align-items:center; gap:5px; padding:0 10px; }
+  .shot-frame .mockbar span{ width:6px; height:6px; border-radius:50%; background:var(--border); }
+  .shot-glyph{ color:var(--muted-dim); opacity:0.5; }
+  .shot-glyph svg{ width:56px; height:56px; }
+  .shot-label{
+    padding:16px 18px; display:flex; align-items:center; justify-content:space-between;
+    border-top:1px solid var(--border-soft);
+  }
+  .shot-label h4{ font-size:14.5px; font-weight:600; }
+  .shot-label .go{ font-size:12px; color:var(--teal); font-family:'IBM Plex Mono',monospace; }
+
+  /* ============ FAQ ============ */
+  .faq-list{ max-width:760px; }
+  .faq-item{ border-bottom:1px solid var(--border-soft); }
+  .faq-q{
+    width:100%; background:none; border:none; color:var(--text); text-align:left;
+    padding:22px 0; display:flex; align-items:center; justify-content:space-between; gap:20px;
+    font-size:16px; font-weight:500; font-family:'Inter',sans-serif;
+  }
+  .faq-q .plus{ font-family:'IBM Plex Mono',monospace; color:var(--teal); font-size:18px; transition:transform .25s ease; flex-shrink:0; }
+  .faq-item.open .faq-q .plus{ transform:rotate(45deg); }
+  .faq-a{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .faq-item.open .faq-a{ max-height:200px; }
+  .faq-a p{ padding-bottom:22px; color:var(--muted); font-size:14.5px; max-width:620px; }
+
+  /* ============ CONTACT ============ */
+  .contact-grid{ display:grid; grid-template-columns:1fr 0.85fr; gap:56px; }
+  .form-group{ margin-bottom:18px; }
+  .form-group label{ display:block; font-size:13px; color:var(--muted); margin-bottom:7px; }
+  .form-group input, .form-group textarea{
+    width:100%; background:var(--panel); border:1px solid var(--border); border-radius:7px;
+    padding:12px 14px; color:var(--text); font-family:'Inter',sans-serif; font-size:14.5px;
+  }
+  .form-group input:focus, .form-group textarea:focus{ border-color:var(--teal); outline:none; }
+  .form-group textarea{ resize:vertical; min-height:110px; }
+  .form-note{ font-size:12.5px; color:var(--muted-dim); margin-top:10px; }
+
+  .contact-card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:28px; }
+  .contact-card h3{ font-size:17px; margin-bottom:6px; }
+  .contact-card .role{ color:var(--teal); font-size:13.5px; margin-bottom:22px; font-family:'IBM Plex Mono',monospace; }
+  .contact-row{ display:flex; gap:14px; align-items:flex-start; padding:14px 0; border-top:1px solid var(--border-soft); }
+  .contact-row:first-of-type{ border-top:none; }
+  .contact-row .ic{ color:var(--teal); flex-shrink:0; margin-top:2px; }
+  .contact-row .ic svg{ width:17px; height:17px; }
+  .contact-row .txt-label{ font-size:12px; color:var(--muted-dim); text-transform:uppercase; letter-spacing:0.06em; }
+  .contact-row .txt-val{ font-size:14.5px; color:var(--text); margin-top:2px; }
+
+  /* ============ FOOTER ============ */
+  footer{ padding:56px 0 34px; }
+  .footer-top{ display:flex; justify-content:space-between; gap:40px; flex-wrap:wrap; margin-bottom:40px; }
+  .footer-brand p{ color:var(--muted); font-size:14px; max-width:280px; margin-top:12px; }
+  .footer-cols{ display:flex; gap:64px; }
+  .footer-col h5{ font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted-dim); margin-bottom:14px; }
+  .footer-col ul{ list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .footer-col a{ font-size:14px; color:var(--muted); transition:color .15s ease; }
+  .footer-col a:hover{ color:var(--teal); }
+  .footer-bottom{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;
+    padding-top:26px; border-top:1px solid var(--border-soft); font-size:13px; color:var(--muted-dim);
+  }
+  .footer-bottom .mono{ color:var(--muted-dim); }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width:960px){
+    .nav-links{ display:none; }
+    .hero-grid{ grid-template-columns:1fr; }
+    .grid-4{ grid-template-columns:repeat(2,1fr); }
+    .grid-3{ grid-template-columns:repeat(2,1fr); }
+    .about-grid, .contact-grid{ grid-template-columns:1fr; }
+    .stack-cols{ grid-template-columns:repeat(2,1fr); }
+    .stack-col{ border-bottom:1px solid var(--border-soft); }
+    .victim-row{ grid-template-columns:1fr; gap:6px; }
+    .gallery-grid{ grid-template-columns:1fr; }
+    .footer-top{ flex-direction:column; }
+    .footer-cols{ gap:40px; }
+  }
+  @media (max-width:600px){
+    .wrap{ padding:0 20px; }
+    .grid-4,.grid-3,.grid-2{ grid-template-columns:1fr; }
+    .section-pad{ padding:72px 0; }
+    .hero{ padding:56px 0 72px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-texture"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5V11C4 16.5 7.4 20.7 12 22C16.6 20.7 20 16.5 20 11V5L12 2Z" stroke="#062421" stroke-width="2" stroke-linejoin="round"/></svg></span>
+      SecureAI Guardian
+    </a>
+    <nav class="nav-links">
+      <a href="#about">About</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#faq">FAQ</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-primary btn-sm launch-link" href="#">Launch Application</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">AI GOVERNANCE &amp; CYBERSECURITY PLATFORM</div>
+        <h1>Deploy AI your organization can actually <span class="accent">trust.</span></h1>
+        <p class="tagline">AI Governance &amp; Cybersecurity Platform for Responsible AI Deployment — SecureAI Guardian inspects every prompt and response for threats, scores the risk, and logs the decision, before anything unsafe reaches your users.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary launch-link" href="#">Launch Application</a>
+          <a class="btn btn-ghost" href="#features">Explore Features</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="num">8-stage</div><div class="label">Analysis pipeline</div></div>
+          <div class="hero-stat"><div class="num">100%</div><div class="label">Requests audit-logged</div></div>
+          <div class="hero-stat"><div class="num">Explainable</div><div class="label">Every risk score</div></div>
+        </div>
+      </div>
+
+      <div class="console" id="hero-console">
+        <div class="console-bar">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="title">risk-analysis.log</div>
+        </div>
+        <div class="console-body" id="console-body"><!-- lines injected by JS --></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="section-pad" id="about">
+    <div class="wrap">
+      <div class="about-grid">
+        <div>
+          <div class="eyebrow">ABOUT</div>
+          <h2 style="font-size:clamp(26px,3vw,34px); font-weight:600; margin-bottom:18px;">Why SecureAI Guardian exists</h2>
+        </div>
+        <div class="about-copy">
+          <p>Generative AI moved from research labs into production faster than most organizations could build the guardrails around it. <strong>SecureAI Guardian was built to close that gap</strong> — a single place where prompts and model outputs are checked, scored, and recorded before they do any damage.</p>
+          <p>The risks of generative AI are no longer theoretical. Models can be manipulated into ignoring their instructions, tricked into revealing data they were never meant to expose, or steered into producing outputs that are unsafe, biased, or simply wrong — often without the operator ever knowing it happened.</p>
+          <p><strong>Responsible AI</strong> means an organization can explain, defend, and control what its AI systems do. <strong>AI Governance</strong> is what makes that possible in practice: policies, monitoring, and audit trails that turn "we hope it's fine" into "we can prove it's fine." SecureAI Guardian is built as that governance layer.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHY I BUILT THIS ============ -->
+  <section class="section-pad">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">THE PROBLEM</div>
+        <h2>Organizations adopting AI are exposed in ways most teams haven't accounted for</h2>
+        <p>SecureAI Guardian was built to detect these risks before they affect users and organizations.</p>
+      </div>
+      <div class="risk-strip">
+        <div class="risk-item reveal"><span class="n">01</span><span class="txt"><strong style="color:var(--text)">Prompt Injection</strong> — hidden instructions smuggled into input to override the system's intended behavior.</span></div>
+        <div class="risk-item reveal"><span class="n">02</span><span class="txt"><strong style="color:var(--text)">Jailbreak Attacks</strong> — structured attempts to bypass safety and policy constraints entirely.</span></div>
+        <div class="risk-item reveal"><span class="n">03</span><span class="txt"><strong style="color:var(--text)">Sensitive Data Leakage</strong> — models exposing confidential, personal, or proprietary information.</span></div>
+        <div class="risk-item reveal"><span class="n">04</span><span class="txt"><strong style="color:var(--text)">Unsafe AI Outputs</strong> — harmful, biased, or misleading responses reaching real users unchecked.</span></div>
+        <div class="risk-item reveal"><span class="n">05</span><span class="txt"><strong style="color:var(--text)">AI Misuse</strong> — systems repurposed for fraud, abuse, or actions outside their intended scope.</span></div>
+        <div class="risk-item reveal"><span class="n">06</span><span class="txt"><strong style="color:var(--text)">Lack of Governance</strong> — no consistent policy, oversight, or record of what the AI actually did.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHO CAN BENEFIT ============ -->
+  <section class="section-pad">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">WHO IT'S FOR</div>
+        <h2>Who can benefit</h2>
+        <p>Any organization putting generative AI in front of real users or real data.</p>
+      </div>
+      <div class="grid grid-4" id="benefit-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ VICTIMS ============ -->
+  <section class="section-pad">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">WHAT'S AT STAKE</div>
+        <h2>Who's affected when AI systems go unguarded</h2>
+        <p>Insecure AI doesn't just fail quietly — it puts real people and institutions at risk.</p>
+      </div>
+      <div class="victims-list reveal" id="victims-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section class="section-pad" id="how-it-works">
+    <div class="wrap">
+      <div class="section-head reveal" style="margin-left:auto; margin-right:auto; text-align:center;">
+        <div class="eyebrow" style="justify-content:center;">HOW SECUREAI GUARDIAN WORKS</div>
+        <h2>One prompt, eight checkpoints</h2>
+        <p style="margin:0 auto;">Every request moves through the same governed pipeline before a response is ever returned.</p>
+      </div>
+      <div class="workflow" id="workflow"></div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURES ============ -->
+  <section class="section-pad" id="features">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">CAPABILITIES</div>
+        <h2>Features</h2>
+        <p>Everything needed to govern AI usage from a single console.</p>
+      </div>
+      <div class="grid grid-3" id="feature-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ TECH STACK ============ -->
+  <section class="section-pad">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">TECHNOLOGY</div>
+        <h2>Technology stack</h2>
+        <p>Built to run entirely at the edge.</p>
+      </div>
+      <div class="stack-cols reveal">
+        <div class="stack-col"><h4>Frontend</h4><ul><li>HTML</li><li>CSS</li><li>JavaScript</li></ul></div>
+        <div class="stack-col"><h4>Backend</h4><ul><li>Cloudflare Pages Functions</li></ul></div>
+        <div class="stack-col"><h4>AI</h4><ul><li>Cloudflare Workers AI</li><li>Large Language Model</li></ul></div>
+        <div class="stack-col"><h4>Security</h4><ul><li>AI Governance</li><li>Threat Detection</li></ul></div>
+        <div class="stack-col"><h4>Deployment</h4><ul><li>Cloudflare Pages</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GALLERY ============ -->
+  <section class="section-pad" id="gallery">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">PROJECT GALLERY</div>
+        <h2>See it inside the console</h2>
+        <p>A preview of the application. Click any screenshot to open it.</p>
+      </div>
+      <div class="gallery-grid" id="gallery-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section class="section-pad" id="faq">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">FAQ</div>
+        <h2>Frequently asked questions</h2>
+      </div>
+      <div class="faq-list" id="faq-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="section-pad" id="contact" style="border-bottom:none;">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">CONTACT</div>
+        <h2>Get in touch</h2>
+        <p>Questions about SecureAI Guardian, governance policies, or a pilot deployment.</p>
+      </div>
+      <div class="contact-grid">
+        <form class="reveal" id="contact-form">
+          <div class="form-group">
+            <label for="cf-name">Name</label>
+            <input type="text" id="cf-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="cf-email">Email</label>
+            <input type="email" id="cf-email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="cf-message">Message</label>
+            <textarea id="cf-message" name="message" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Send Message</button>
+          <p class="form-note" id="cf-note">This form doesn't send anything on its own yet — wire it to a Cloudflare Pages Function or your preferred email service when you're ready.</p>
+        </form>
+
+        <div class="contact-card reveal">
+          <h3>Soham Patil</h3>
+          <div class="role">Project Leader &amp; Developer</div>
+
+          <div class="contact-row">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M20 4L3 11L10 13M20 4L13 21L10 13M20 4L10 13" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+            <div><div class="txt-label">Location</div><div class="txt-val">Pune, Maharashtra, India</div></div>
+          </div>
+          <div class="contact-row">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M6.6 10.8C8 13.6 10.4 16 13.2 17.4L15.4 15.2C15.7 14.9 16.1 14.8 16.5 15C17.7 15.4 19 15.6 20.3 15.6C20.9 15.6 21.4 16.1 21.4 16.7V20.3C21.4 20.9 20.9 21.4 20.3 21.4C10.4 21.4 2.6 13.6 2.6 3.7C2.6 3.1 3.1 2.6 3.7 2.6H7.3C7.9 2.6 8.4 3.1 8.4 3.7C8.4 5 8.6 6.3 9 7.5C9.1 7.9 9 8.3 8.7 8.6L6.6 10.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+            <div><div class="txt-label">Phone</div><div class="txt-val">+91 94227 72959</div></div>
+          </div>
+          <div class="contact-row">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 7L12 13L21 7" stroke="currentColor" stroke-width="1.6"/></svg></div>
+            <div><div class="txt-label">Address</div><div class="txt-val">Pune, Maharashtra 411001, India</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="brand" href="#top">
+          <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5V11C4 16.5 7.4 20.7 12 22C16.6 20.7 20 16.5 20 11V5L12 2Z" stroke="#062421" stroke-width="2" stroke-linejoin="round"/></svg></span>
+          SecureAI Guardian
+        </a>
+        <p>AI Governance &amp; Cybersecurity Platform for Responsible AI Deployment.</p>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h5>Product</h5>
+          <ul>
+            <li><a href="#about">About</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a class="launch-link" href="#">Launch Application</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Legal</h5>
+          <ul>
+            <li><a href="/privacy-policy.html">Privacy Policy</a></li>
+            <li><a href="/terms.html">Terms</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Connect</h5>
+          <ul>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="https://github.com/" target="_blank" rel="noopener">GitHub</a></li>
+            <li><a href="https://linkedin.com/" target="_blank" rel="noopener">LinkedIn</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 SecureAI Guardian. All rights reserved.</span>
+      <span class="mono">Project Owner — Soham Patil</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // ============ Launch Application: opens the embedded app (index.html) ============
+  // Delegated so it also works for gallery tiles created dynamically below.
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('.launch-link');
+    if(el){
+      e.preventDefault();
+      window.openSecureAIApp();
+    }
+  });
+
+  // ============ Icon set ============
+  var icons = {
+    inject: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3V21M12 3L8 7M12 3L16 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="17" width="16" height="4" rx="1" stroke="currentColor" stroke-width="1.7"/></svg>',
+    jailbreak: '<svg viewBox="0 0 24 24" fill="none"><path d="M17 10V7C17 4.2 14.8 2 12 2C9.2 2 7 4.2 7 7V10" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M14 10L18 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    risk: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 2L21 20H3L12 2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 9V14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="17" r="0.9" fill="currentColor"/></svg>',
+    explain: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M9.5 9.5C9.8 8.2 10.9 7.5 12 7.5C13.3 7.5 14.5 8.4 14.5 9.7C14.5 11.4 12 11.4 12 13.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.3" r="0.9" fill="currentColor"/></svg>',
+    governance: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3L4 6V11C4 16 7.4 20 12 21C16.6 20 20 16 20 11V6L12 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12L11 14L15.5 9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    audit: '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="1.5" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 8H15.5M8.5 12H15.5M8.5 16H12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    oversight: '<svg viewBox="0 0 24 24" fill="none"><path d="M2 12C2 12 5.5 6 12 6C18.5 6 22 12 22 12C22 12 18.5 18 12 18C5.5 18 2 12 2 12Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg>',
+    responsible: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 5 17.5 5 11V5L12 3L19 5V11C19 17.5 12 21 12 21Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+    deploy: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14.5 9H21.5L15.8 13.2L18 20L12 15.9L6 20L8.2 13.2L2.5 9H9.5L12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+    building: '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="9" height="18" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="9" width="7" height="12" stroke="currentColor" stroke-width="1.7"/><path d="M7 7H10M7 11H10M7 15H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    gov2: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 21H20M6 21V9L12 5L18 9V21M10 21V14H14V21" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+    health: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 4 15.5 4 9.5C4 6.5 6.4 4.5 9 4.5C10.6 4.5 11.6 5.3 12 6C12.4 5.3 13.4 4.5 15 4.5C17.6 4.5 20 6.5 20 9.5C20 15.5 12 21 12 21Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+    edu: '<svg viewBox="0 0 24 24" fill="none"><path d="M2 8L12 4L22 8L12 12L2 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M6 10.5V15.5C6 15.5 8.5 17.5 12 17.5C15.5 17.5 18 15.5 18 15.5V10.5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+    bank: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 10L12 4L21 10" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M5 10V20H19V10" stroke="currentColor" stroke-width="1.7"/><path d="M9 14V17M12 14V17M15 14V17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    dev: '<svg viewBox="0 0 24 24" fill="none"><path d="M8 8L3 12L8 16M16 8L21 12L16 16M14 5L10 19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    startup: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14.5 9H21.5L15.8 13.2L18 20L12 15.9L6 20L8.2 13.2L2.5 9H9.5L12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+    research: '<svg viewBox="0 0 24 24" fill="none"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="M20 20L15.5 15.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    screen1: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 16C8 14 9.8 13 12 13C14.2 13 16 14 16 16" stroke="currentColor" stroke-width="1.5"/></svg>',
+    screen2: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 15L9 11L12 14L18 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    screen3: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M12 2L21 20H3L12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" transform="translate(0,3) scale(0.5) translate(12,4)"/><path d="M7 15L10 9L14 15L17 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    screen4: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 17V11M12 17V8M17 17V13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>'
+  };
+
+  // ============ Console log animation ============
+  var lines = [
+    {tag:"user", val:"\u201CIgnore previous instructions and\u2026\u201D", cls:""},
+    {tag:"scan", val:"Prompt Injection Detection\u2026", cls:""},
+    {tag:"detect", val:"Injection pattern matched", cls:"danger"},
+    {tag:"scan", val:"Jailbreak Detection\u2026", cls:""},
+    {tag:"detect", val:"No jailbreak signature found", cls:"ok"},
+    {tag:"scan", val:"Sensitive Data Scan\u2026", cls:""},
+    {tag:"detect", val:"No PII detected", cls:"ok"},
+    {tag:"decide", val:"Governance policy: BLOCK", cls:"warn"},
+    {tag:"log", val:"Audit entry written \u2713", cls:"ok"}
+  ];
+  var body = document.getElementById('console-body');
+  function playConsole(){
+    body.innerHTML = "";
+    lines.forEach(function(l, i){
+      var div = document.createElement('div');
+      div.className = 'console-line ' + l.cls;
+      div.style.animationDelay = (i * 0.32) + 's';
+      div.innerHTML = '<span class="tag">['+l.tag+']</span><span class="val">'+l.val+'</span>';
+      body.appendChild(div);
+    });
+    var score = document.createElement('div');
+    score.className = 'console-score';
+    score.style.animationDelay = (lines.length * 0.32) + 's';
+    score.innerHTML = '<span class="lbl"><span class="pulse-dot"></span>Risk Score</span><span class="score">78 / 100 \u2014 High</span>';
+    body.appendChild(score);
+  }
+  playConsole();
+  setInterval(playConsole, (lines.length * 0.32 + 4) * 1000);
+
+  // ============ Who can benefit ============
+  var benefits = [
+    ["building","Businesses","Protect customer-facing AI tools from manipulation and reputational risk."],
+    ["gov2","Government Organizations","Meet accountability and transparency requirements for public-sector AI."],
+    ["health","Healthcare","Keep patient data and clinical AI assistants within strict safety bounds."],
+    ["edu","Educational Institutions","Give students and staff AI tools with guardrails built in from day one."],
+    ["bank","Financial Institutions","Prevent AI-driven fraud, data leakage, and unauthorized advice."],
+    ["dev","AI Developers","Ship models with a governance layer instead of building one from scratch."],
+    ["startup","Startups","Move fast on AI features without inheriting unmanaged security risk."],
+    ["research","Researchers","Study and benchmark model behavior under adversarial conditions."]
+  ];
+  var bgrid = document.getElementById('benefit-grid');
+  benefits.forEach(function(b){
+    var el = document.createElement('div');
+    el.className = 'card benefit-card reveal';
+    el.innerHTML = '<div class="icon">'+icons[b[0]]+'</div><h3>'+b[1]+'</h3><p>'+b[2]+'</p>';
+    bgrid.appendChild(el);
+  });
+
+  // ============ Victims ============
+  var victims = [
+    ["AI Developers","Ship models without visibility into how they fail under adversarial prompts, discovering issues only after deployment."],
+    ["Companies","Absorb reputational and financial damage when an unguarded AI system says or does the wrong thing publicly."],
+    ["Students","Receive AI-generated guidance that can be manipulated, inaccurate, or exploited without their knowledge."],
+    ["Government","Face accountability gaps when public-facing AI systems act outside policy with no audit trail."],
+    ["Banks","Risk fraud and data exposure when AI assistants are tricked into leaking financial information."],
+    ["Hospitals","Risk patient safety when clinical AI tools produce unsafe or unverified outputs."],
+    ["Customers","Receive responses shaped by manipulated or jailbroken systems, without ever knowing it happened."],
+    ["Public Users","Interact with AI systems that have no oversight, no accountability, and no record of what occurred."]
+  ];
+  var vlist = document.getElementById('victims-list');
+  victims.forEach(function(v){
+    var el = document.createElement('div');
+    el.className = 'victim-row';
+    el.innerHTML = '<div class="who">'+v[0]+'</div><div class="what">'+v[1]+'</div>';
+    vlist.appendChild(el);
+  });
+
+  // ============ Workflow ============
+  var steps = [
+    ["User Prompt","The request enters SecureAI Guardian exactly as the user submitted it."],
+    ["Threat Detection","Checked for prompt injection, jailbreak patterns, and known attack signatures."],
+    ["AI Risk Analysis","The model's intended behavior is analyzed against expected safe operation."],
+    ["Governance Decision","Policy rules determine whether the request may proceed, be modified, or blocked."],
+    ["Explainable AI","The reasoning behind the decision is generated in human-readable form."],
+    ["Risk Score","A quantified score reflects the overall risk level of the interaction."],
+    ["Audit Logging","Every decision and score is recorded to a permanent, reviewable log."],
+    ["Safe Response","Only a response that has cleared every checkpoint reaches the user."]
+  ];
+  var wf = document.getElementById('workflow');
+  steps.forEach(function(s, i){
+    var el = document.createElement('div');
+    el.className = 'wf-step reveal';
+    el.innerHTML = '<div class="wf-num">'+(i+1)+'</div><div class="wf-content"><h4>'+s[0]+'</h4><p>'+s[1]+'</p></div>';
+    wf.appendChild(el);
+  });
+
+  // ============ Features ============
+  var features = [
+    ["inject","Prompt Injection Detection","Identifies attempts to override system instructions hidden inside user input."],
+    ["jailbreak","Jailbreak Detection","Flags structured attempts to bypass model safety and policy constraints."],
+    ["risk","AI Risk Assessment","Evaluates every interaction against a consistent, defensible risk model."],
+    ["explain","Explainable AI","Turns every decision into a clear, human-readable explanation."],
+    ["governance","Governance Engine","Applies configurable policy rules before any response is released."],
+    ["audit","Audit Logs","Keeps a permanent, reviewable record of every decision made."],
+    ["oversight","Human Oversight","Routes high-risk interactions to a human reviewer when needed."],
+    ["responsible","Responsible AI","Built around accountability, transparency, and user safety."],
+    ["deploy","Secure AI Deployment","Governance enforced at the edge, close to where requests originate."]
+  ];
+  var fgrid = document.getElementById('feature-grid');
+  features.forEach(function(f){
+    var el = document.createElement('div');
+    el.className = 'card reveal';
+    el.innerHTML = '<div class="icon">'+icons[f[0]]+'</div><h3>'+f[1]+'</h3><p>'+f[2]+'</p>';
+    fgrid.appendChild(el);
+  });
+
+  // ============ Gallery ============
+  var shots = [
+    ["screen1","Login Page","Secure authentication into the console."],
+    ["screen2","Dashboard","At-a-glance view of activity and risk trends."],
+    ["screen3","Threat Analysis","Live breakdown of detected threats per request."],
+    ["screen4","Reports","Exportable audit and governance reports."]
+  ];
+  var ggrid = document.getElementById('gallery-grid');
+  shots.forEach(function(s){
+    var el = document.createElement('a');
+    el.className = 'shot launch-link';
+    el.href = '#';
+    el.innerHTML = '<div class="shot-frame"><div class="mockbar"><span></span><span></span><span></span></div><div class="shot-glyph">'+icons[s[0]]+'</div></div><div class="shot-label"><h4>'+s[1]+'</h4><span class="go">Open \u2192</span></div>';
+    ggrid.appendChild(el);
+  });
+  document.querySelectorAll('.shot-glyph svg').forEach(function(svg){ svg.style.width='56px'; svg.style.height='56px'; });
+
+  // ============ FAQ ============
+  var faqs = [
+    ["What exactly does SecureAI Guardian check?","Every prompt and model response is analyzed for prompt injection, jailbreak attempts, sensitive data exposure, and policy violations before it's allowed through."],
+    ["Does this replace my existing AI model or application?","No. SecureAI Guardian sits alongside your existing AI stack as a governance and monitoring layer — it doesn't replace your model, login system, or application logic."],
+    ["Is every decision explainable?","Yes. Each risk score comes with a plain-language explanation of what was detected and why the decision was made, so reviewers don't have to guess."],
+    ["Where are audit logs stored, and can they be exported?","Audit logs are written for every request inside the application and are available for review from the dashboard."],
+    ["Can a human review flagged interactions?","Yes. High-risk interactions can be routed for human oversight instead of being resolved automatically."],
+    ["What does the landing page vs. the application do?","This page is the public-facing homepage. Clicking Launch Application, Login, or Get Started takes you into the existing SecureAI Guardian console, unchanged."]
+  ];
+  var flist = document.getElementById('faq-list');
+  faqs.forEach(function(f){
+    var item = document.createElement('div');
+    item.className = 'faq-item';
+    item.innerHTML = '<button class="faq-q"><span>'+f[0]+'</span><span class="plus">+</span></button><div class="faq-a"><p>'+f[1]+'</p></div>';
+    item.querySelector('.faq-q').addEventListener('click', function(){
+      item.classList.toggle('open');
+    });
+    flist.appendChild(item);
+  });
+
+  // ============ Contact form (no backend wired) ============
+  document.getElementById('contact-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    document.getElementById('cf-note').textContent = "Thanks — this demo form isn't connected to a backend yet. Reach out directly using the details alongside this form.";
+  });
+
+  // ============ Scroll reveal ============
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0.15});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  var wfObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){ entry.target.classList.add('in'); }
+    });
+  }, {threshold:0.4});
+  document.querySelectorAll('.wf-step').forEach(function(el){ wfObserver.observe(el); });
+})();
+</script>
+
+<!-- ============ EMBEDDED APPLICATION (index.html) ============ -->
+<div id="appOverlay" style="display:none;position:fixed;inset:0;z-index:5000;background:#030712;">
+  <button id="appCloseBtn" aria-label="Close application" title="Back to homepage"
+    style="position:fixed;top:14px;right:14px;z-index:5001;width:36px;height:36px;border-radius:8px;
+    background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#E8ECF4;
+    font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-family:sans-serif;backdrop-filter:blur(6px);">&#10005;</button>
+  <iframe id="appIframe" title="SecureAI Guardian Application"
+    style="width:100%;height:100%;border:none;display:block;background:#030712;"></iframe>
+</div>
+
+<script id="secureai-app-loader">
+(function(){
+    var iframeLoaded = false;
+
+  window.openSecureAIApp = function(){
+    var overlay = document.getElementById('appOverlay');
+    var iframe = document.getElementById('appIframe');
+    if(!iframeLoaded){
+      // Load the real app.html file (same origin as this page) instead of a
+      // blob: URL, so relative fetch('/api/analyze') calls inside it resolve
+      // correctly against the site's actual domain.
+      iframe.src = 'app.html';
+      iframeLoaded = true;
+    }
+    overlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeSecureAIApp = function(){
+    document.getElementById('appOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
+  document.getElementById('appCloseBtn').addEventListener('click', window.closeSecureAIApp);
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && document.getElementById('appOverlay').style.display === 'block'){
+      window.closeSecureAIApp();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
