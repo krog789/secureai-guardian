@@ -89,7 +89,26 @@ export async function onRequestPost(context) {
         max_tokens: 900,
       });
 
-      const raw = (aiResponse && (aiResponse.response || aiResponse.result || "")) + "";
+      // Different Workers AI models shape their reply differently: some return
+      // a plain string in `response`, some return an already-parsed object
+      // (e.g. when the model natively supports JSON mode), and some use
+      // `result` instead of `response`. Handle all three instead of assuming
+      // a string, which previously turned real objects into the literal text
+      // "[object Object]" via `+ ""`.
+      const respField = aiResponse && aiResponse.response;
+      let raw;
+      if (typeof respField === "string") {
+        raw = respField;
+      } else if (respField && typeof respField === "object") {
+        raw = JSON.stringify(respField);
+      } else if (typeof (aiResponse && aiResponse.result) === "string") {
+        raw = aiResponse.result;
+      } else if (aiResponse && aiResponse.result && typeof aiResponse.result === "object") {
+        raw = JSON.stringify(aiResponse.result);
+      } else {
+        raw = JSON.stringify(aiResponse || {});
+      }
+
       const parsed = extractJSON(raw);
 
       if (!parsed) {
