@@ -20,7 +20,9 @@ const SYSTEM_INSTRUCTION =
   "no explanation outside the JSON), matching exactly this schema:\n" +
   '{"category": one of ' + JSON.stringify(CATEGORIES) + ', "risk_score": integer 0-100, ' +
   '"risk_level": one of ["None","Low","Medium","High","Critical"], "decision": one of ' +
-  '["Allow","Flag","Block"], "reasoning": a short 1-2 sentence explanation}';
+  '["Allow","Warn","Restrict","Block"], "confidence": integer 0-100, ' +
+  '"intent_analysis": "2-3 sentence explanation of what the prompt actually means and why you classified it this way", ' +
+  '"reasons": ["short reason", "short reason"]}';
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -120,8 +122,16 @@ export async function onRequestPost(context) {
         category: CATEGORIES.includes(parsed.category) ? parsed.category : "General / Benign",
         risk_score: Number.isFinite(parsed.risk_score) ? Math.max(0, Math.min(100, parsed.risk_score)) : 0,
         risk_level: ["None", "Low", "Medium", "High", "Critical"].includes(parsed.risk_level) ? parsed.risk_level : "None",
-        decision: ["Allow", "Flag", "Block"].includes(parsed.decision) ? parsed.decision : "Allow",
-        reasoning: typeof parsed.reasoning === "string" && parsed.reasoning.trim() ? parsed.reasoning : "No further explanation was provided by the model.",
+        decision: ["Allow", "Warn", "Restrict", "Block"].includes(parsed.decision) ? parsed.decision : "Allow",
+        confidence: Number.isFinite(parsed.confidence) ? Math.max(0, Math.min(100, parsed.confidence)) : 80,
+        intent_analysis:
+          typeof parsed.intent_analysis === "string" && parsed.intent_analysis.trim()
+            ? parsed.intent_analysis
+            : "No further explanation was provided by the model.",
+        reasons:
+          Array.isArray(parsed.reasons) && parsed.reasons.length
+            ? parsed.reasons.map((r) => String(r)).slice(0, 8)
+            : [],
       };
 
       return withCORS(JSON.stringify(result), 200);
