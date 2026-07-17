@@ -6,7 +6,6 @@
 <title>SecureAI Guardian — AI Prompt Security Platform</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
   :root{
@@ -369,178 +368,95 @@ z-index:9999;
     .stats-grid{grid-template-columns:1fr 1fr;}
     .login-card{width:92vw;padding:28px 20px;}
   }
+
+  /* ===== WELCOME GATE ===== */
+  .gate-shell{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,200,255,0.08), transparent 60%), var(--bg);}
+  .gate-orb{position:fixed;border-radius:50%;filter:blur(70px);opacity:0.35;pointer-events:none;z-index:0;animation:gateFloat 14s ease-in-out infinite;}
+  .gate-orb-1{width:340px;height:340px;top:-80px;left:-80px;background:radial-gradient(circle,#00c8ff,transparent 70%);}
+  .gate-orb-2{width:300px;height:300px;bottom:-100px;right:-60px;background:radial-gradient(circle,#00ffea,transparent 70%);animation-delay:-5s;}
+  .gate-orb-3{width:240px;height:240px;bottom:20%;left:8%;background:radial-gradient(circle,#a855f7,transparent 70%);animation-delay:-9s;opacity:0.22;}
+  @keyframes gateFloat{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(20px,-24px) scale(1.06);}}
+  .gate-card{position:relative;z-index:1;width:460px;max-width:100%;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:40px 38px 32px;backdrop-filter:blur(24px);box-shadow:0 0 90px rgba(0,200,255,0.14),0 24px 70px rgba(0,0,0,0.45);animation:authFade 0.4s ease;margin:24px 0;}
+  .gate-intro{text-align:center;margin:4px 0 24px;}
+  .gate-intro h2{font-size:19px;font-weight:800;color:var(--text);letter-spacing:-0.3px;margin-bottom:8px;}
+  .gate-intro p{font-size:13px;color:var(--text2);line-height:1.6;}
+  .gate-role-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .gate-role-chip{padding:11px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.18s;text-align:left;}
+  .gate-role-chip:hover{border-color:var(--border-hover);background:rgba(0,200,255,0.06);color:var(--text);}
+  .gate-role-chip.selected{background:linear-gradient(135deg,rgba(0,200,255,0.16),rgba(0,255,234,0.1));border-color:var(--blue);color:var(--text);box-shadow:0 0 0 1px var(--blue) inset;}
+  .gate-enter-btn{margin-top:6px;background:linear-gradient(135deg,#00c8ff,#00ffea,#a855f7);background-size:200% 200%;animation:gateGradientShift 5s ease infinite;}
+  @keyframes gateGradientShift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+  .gate-comingsoon{display:flex;align-items:center;gap:8px;margin-top:22px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px dashed var(--border);border-radius:10px;font-size:11px;color:var(--text3);line-height:1.5;}
+  .gate-comingsoon i{flex-shrink:0;font-size:14px;color:var(--blue);}
+  .profile-badge{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;font-size:11px;color:var(--text3);margin-top:8px;line-height:1.4;}
+  .profile-badge i{color:var(--blue);flex-shrink:0;}
+  @media (max-width:480px){
+    .gate-card{padding:30px 22px 26px;}
+    .gate-role-grid{grid-template-columns:1fr;}
+  }
 </style>
 </head>
 <body>
 
-<!-- ===== LOGIN ===== -->
+<!-- ===== WELCOME GATE (replaces login/signup) ===== -->
 <div id="loginScreen" style="display: none;">
-  <div class="auth-shell">
+  <div class="gate-shell">
+    <div class="gate-orb gate-orb-1"></div>
+    <div class="gate-orb gate-orb-2"></div>
+    <div class="gate-orb gate-orb-3"></div>
 
-    <!-- STEP: LANDING -->
-    <div class="auth-card auth-step active" id="step-landing">
+    <div class="gate-card">
       <div class="login-logo">
         <svg class="login-logo-svg" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <lineargradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00c8ff"></stop><stop offset="100%" stop-color="#00ffea"></stop></lineargradient>
-            <lineargradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00ffea"></stop><stop offset="100%" stop-color="#00c8ff"></stop></lineargradient>
-          </defs>
-          <rect x="2" y="2" width="68" height="68" rx="16" fill="url(#lg1)" opacity="0.12"></rect>
-          <path d="M36 8 L62 20 L62 38 C62 52 50 63 36 67 C22 63 10 52 10 38 L10 20 Z" fill="url(#lg1)" opacity="0.2"></path>
-          <path d="M36 12 L58 23 L58 38 C58 50 48 60 36 63 C24 60 14 50 14 38 L14 23 Z" stroke="url(#lg1)" stroke-width="2" fill="none"></path>
-          <path d="M36 16 L54 26 L54 38 C54 48 46 57 36 60 C26 57 18 48 18 38 L18 26 Z" fill="url(#lg2)" opacity="0.15"></path>
-          <circle cx="36" cy="36" r="10" fill="url(#lg1)" opacity="0.9"></circle>
-          <path d="M30 36 L34 40 L42 32" stroke="#030712" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-          <circle cx="36" cy="36" r="14" stroke="url(#lg1)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"></circle>
+          <path d="M36 6L12 15V33C12 49.5 22.2 62.1 36 66C49.8 62.1 60 49.5 60 33V15L36 6Z" stroke="url(#gateLogoGrad)" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M25 35L32 42L47 27" stroke="url(#gateLogoGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs><linearGradient id="gateLogoGrad" x1="12" y1="6" x2="60" y2="66"><stop stop-color="#00c8ff"/><stop offset="1" stop-color="#00ffea"/></linearGradient></defs>
         </svg>
         <div class="login-title">SecureAI Guardian</div>
         <div class="login-subtitle">Enterprise AI Prompt Security Platform</div>
       </div>
-      <div class="auth-landing-copy">Real-time threat detection, governance, and audit trails for every AI prompt in your organization.</div>
-      <div class="auth-btn-stack">
-        <button class="btn-login" onclick="showAuthStep('step-signin')"><i class="ti ti-login-2"></i> Sign in</button>
-        <button class="btn-login-outline" onclick="showAuthStep('step-signup')"><i class="ti ti-user-plus"></i> Create an account</button>
-      </div>
-      <div class="auth-divider"><span>or continue with</span></div>
-      <div class="oauth-row">
-        <button class="oauth-btn" onclick="oauthLogin('google')" title="Continue with Google"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.77-2.4 3.62v3h3.88c2.27-2.09 3.57-5.17 3.57-8.81z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.94-2.92l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.72-4.95H1.27v3.1C3.25 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.28A7.2 7.2 0 0 1 4.9 12c0-.79.14-1.56.38-2.28V6.62H1.27A11.98 11.98 0 0 0 0 12c0 1.94.46 3.77 1.27 5.38l4.01-3.1z"/><path fill="#EA4335" d="M12 4.77c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.94 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.62l4.01 3.1C6.22 6.88 8.87 4.77 12 4.77z"/></svg></button>
-        <button class="oauth-btn" onclick="oauthLogin('github')" title="Continue with GitHub"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57v-2.17c-3.34.73-4.03-1.6-4.03-1.6-.55-1.4-1.33-1.76-1.33-1.76-1.09-.75.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .31.22.7.83.57A12 12 0 0 0 12 .3z"/></svg></button>
-        <button class="oauth-btn" onclick="oauthLogin('azure')" title="Continue with Microsoft"><svg width="18" height="18" viewBox="0 0 23 23"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg></button>
-      </div>
-    </div>
 
-    <!-- STEP: SIGN UP -->
-    <div class="auth-card auth-step" id="step-signup">
-      <div class="auth-step-header">
-        <button class="auth-back-btn" onclick="showAuthStep('step-landing')"><i class="ti ti-arrow-left"></i></button>
-        <div class="auth-step-title">Create your account</div>
+      <div class="gate-intro">
+        <h2>Welcome — let's set up your console</h2>
+        <p>Tell us a little about yourself and jump straight into the dashboard. No password, no waiting.</p>
       </div>
-      <div class="auth-form">
-        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="signupEmail" placeholder="you@company.com"></div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <div class="pw-input-wrap">
-            <input type="password" class="form-input" id="signupPassword" placeholder="Create a strong password" oninput="updatePwStrength()">
-            <button type="button" class="pw-toggle" onclick="togglePw('signupPassword',this)"><i class="ti ti-eye"></i></button>
-          </div>
-          <div class="pw-strength-track"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>
-          <div class="pw-strength-label" id="pwStrengthLabel">Enter a password</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Confirm password</label>
-          <div class="pw-input-wrap">
-            <input type="password" class="form-input" id="signupConfirm" placeholder="Re-enter your password">
-            <button type="button" class="pw-toggle" onclick="togglePw('signupConfirm',this)"><i class="ti ti-eye"></i></button>
-          </div>
-        </div>
-        <button class="btn-login" id="signupSubmitBtn" onclick="doSignup()"><i class="ti ti-user-plus"></i> Create account<div class="spinner" id="signupSpinner"></div></button>
-        <div class="auth-error" id="signupError"></div>
-      </div>
-      <div class="auth-divider"><span>or continue with</span></div>
-      <div class="oauth-row">
-        <button class="oauth-btn" onclick="oauthLogin('google')" title="Continue with Google"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.77-2.4 3.62v3h3.88c2.27-2.09 3.57-5.17 3.57-8.81z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.94-2.92l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.72-4.95H1.27v3.1C3.25 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.28A7.2 7.2 0 0 1 4.9 12c0-.79.14-1.56.38-2.28V6.62H1.27A11.98 11.98 0 0 0 0 12c0 1.94.46 3.77 1.27 5.38l4.01-3.1z"/><path fill="#EA4335" d="M12 4.77c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.94 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.62l4.01 3.1C6.22 6.88 8.87 4.77 12 4.77z"/></svg></button>
-        <button class="oauth-btn" onclick="oauthLogin('github')" title="Continue with GitHub"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57v-2.17c-3.34.73-4.03-1.6-4.03-1.6-.55-1.4-1.33-1.76-1.33-1.76-1.09-.75.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .31.22.7.83.57A12 12 0 0 0 12 .3z"/></svg></button>
-        <button class="oauth-btn" onclick="oauthLogin('azure')" title="Continue with Microsoft"><svg width="18" height="18" viewBox="0 0 23 23"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg></button>
-      </div>
-      <div class="login-hint auth-link" onclick="showAuthStep('step-signin')">Already have an account? Sign in</div>
-    </div>
 
-    <!-- STEP: VERIFY EMAIL -->
-    <div class="auth-card auth-step" id="step-verify">
-      <div class="auth-icon-badge"><i class="ti ti-mail-check"></i></div>
-      <div class="auth-step-title" style="text-align:center;">Check your email</div>
-      <div class="auth-landing-copy" id="verifyEmailText">We sent a verification link to your email. Click it to activate your account.</div>
-      <button class="btn-login-outline" onclick="resendVerification()"><i class="ti ti-refresh"></i> Resend email</button>
-      <div class="login-hint auth-link" onclick="showAuthStep('step-signin')">Back to sign in</div>
-    </div>
-
-    <!-- STEP: SIGN IN -->
-    <div class="auth-card auth-step" id="step-signin">
-      <div class="auth-step-header">
-        <button class="auth-back-btn" onclick="showAuthStep('step-landing')"><i class="ti ti-arrow-left"></i></button>
-        <div class="auth-step-title">Welcome back</div>
-      </div>
-      <div class="auth-form">
-        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="loginEmail" placeholder="you@company.com"></div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <div class="pw-input-wrap">
-            <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
-            <button type="button" class="pw-toggle" onclick="togglePw('loginPassword',this)"><i class="ti ti-eye"></i></button>
-          </div>
-        </div>
-        <div class="auth-link" style="text-align:right;font-size:12px;margin-top:-6px;" onclick="showAuthStep('step-forgot')">Forgot password?</div>
-        <button class="btn-login" id="loginSubmitBtn" onclick="doLogin()"><i class="ti ti-login-2"></i> Sign in<div class="spinner" id="loginSpinner"></div></button>
-        <div class="auth-error" id="authError"></div>
-      </div>
-      <div class="auth-divider"><span>or continue with</span></div>
-      <div class="oauth-row">
-        <button class="oauth-btn" onclick="oauthLogin('google')" title="Continue with Google"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.77-2.4 3.62v3h3.88c2.27-2.09 3.57-5.17 3.57-8.81z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.94-2.92l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.72-4.95H1.27v3.1C3.25 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.28A7.2 7.2 0 0 1 4.9 12c0-.79.14-1.56.38-2.28V6.62H1.27A11.98 11.98 0 0 0 0 12c0 1.94.46 3.77 1.27 5.38l4.01-3.1z"/><path fill="#EA4335" d="M12 4.77c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.94 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.62l4.01 3.1C6.22 6.88 8.87 4.77 12 4.77z"/></svg></button>
-        <button class="oauth-btn" onclick="oauthLogin('github')" title="Continue with GitHub"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57v-2.17c-3.34.73-4.03-1.6-4.03-1.6-.55-1.4-1.33-1.76-1.33-1.76-1.09-.75.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .31.22.7.83.57A12 12 0 0 0 12 .3z"/></svg></button>
-        <button class="oauth-btn" onclick="oauthLogin('azure')" title="Continue with Microsoft"><svg width="18" height="18" viewBox="0 0 23 23"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg></button>
-      </div>
-      <div class="login-hint auth-link" onclick="showAuthStep('step-signup')">New here? Create an account</div>
-    </div>
-
-    <!-- STEP: FORGOT PASSWORD -->
-    <div class="auth-card auth-step" id="step-forgot">
-      <div class="auth-step-header">
-        <button class="auth-back-btn" onclick="showAuthStep('step-signin')"><i class="ti ti-arrow-left"></i></button>
-        <div class="auth-step-title">Reset your password</div>
-      </div>
-      <div class="auth-landing-copy">Enter the email on your account and we'll send a reset link.</div>
-      <div class="auth-form">
-        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="forgotEmail" placeholder="you@company.com"></div>
-        <button class="btn-login" id="forgotSubmitBtn" onclick="doForgotPassword()"><i class="ti ti-send"></i> Send reset link<div class="spinner" id="forgotSpinner"></div></button>
-        <div class="auth-error" id="forgotError"></div>
-      </div>
-    </div>
-
-    <!-- STEP: FORGOT SENT -->
-    <div class="auth-card auth-step" id="step-forgot-sent">
-      <div class="auth-icon-badge"><i class="ti ti-mail-check"></i></div>
-      <div class="auth-step-title" style="text-align:center;">Reset link sent</div>
-      <div class="auth-landing-copy">Check your email for a link to reset your password. It may take a minute to arrive.</div>
-      <div class="login-hint auth-link" onclick="showAuthStep('step-signin')">Back to sign in</div>
-    </div>
-
-    <!-- STEP: RESET PASSWORD (reached via emailed link) -->
-    <div class="auth-card auth-step" id="step-reset">
-      <div class="auth-step-title">Set a new password</div>
       <div class="auth-form">
         <div class="form-group">
-          <label class="form-label">New password</label>
-          <div class="pw-input-wrap">
-            <input type="password" class="form-input" id="resetPassword" placeholder="Create a strong password" oninput="updatePwStrength('resetPassword','resetStrengthFill','resetStrengthLabel')">
-            <button type="button" class="pw-toggle" onclick="togglePw('resetPassword',this)"><i class="ti ti-eye"></i></button>
-          </div>
-          <div class="pw-strength-track"><div class="pw-strength-fill" id="resetStrengthFill"></div></div>
-          <div class="pw-strength-label" id="resetStrengthLabel">Enter a password</div>
+          <label class="form-label">Your name</label>
+          <input type="text" class="form-input" id="gateName" placeholder="Jane Doe" autocomplete="name">
         </div>
+
         <div class="form-group">
-          <label class="form-label">Confirm new password</label>
-          <div class="pw-input-wrap">
-            <input type="password" class="form-input" id="resetConfirm" placeholder="Re-enter your password">
-            <button type="button" class="pw-toggle" onclick="togglePw('resetConfirm',this)"><i class="ti ti-eye"></i></button>
+          <label class="form-label">What best describes you?</label>
+          <div class="gate-role-grid" id="gateRoleGrid">
+            <button type="button" class="gate-role-chip" data-role="Student">🎓 Student</button>
+            <button type="button" class="gate-role-chip" data-role="Developer / AI Engineer">💻 Developer</button>
+            <button type="button" class="gate-role-chip" data-role="Security Manager">🛡️ Security Manager</button>
+            <button type="button" class="gate-role-chip" data-role="Business Owner">🏢 Business Owner</button>
+            <button type="button" class="gate-role-chip" data-role="Researcher">🔬 Researcher</button>
+            <button type="button" class="gate-role-chip" data-role="Government / Public Sector">🏛️ Government</button>
+            <button type="button" class="gate-role-chip" data-role="Healthcare">⚕️ Healthcare</button>
+            <button type="button" class="gate-role-chip" data-role="Other">✨ Other</button>
           </div>
         </div>
-        <button class="btn-login" id="resetSubmitBtn" onclick="doResetPassword()"><i class="ti ti-check"></i> Update password<div class="spinner" id="resetSpinner"></div></button>
-        <div class="auth-error" id="resetError"></div>
+
+        <div class="form-group">
+          <label class="form-label">Organization <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+          <input type="text" class="form-input" id="gateOrg" placeholder="e.g. Acme Inc., Stanford University, Freelance">
+        </div>
+
+        <button class="btn-login gate-enter-btn" id="gateSubmitBtn" onclick="enterGuardianConsole()">
+          <i class="ti ti-rocket"></i> Enter Guardian Console
+        </button>
+        <div class="auth-error" id="gateError"></div>
+      </div>
+
+      <div class="gate-comingsoon">
+        <i class="ti ti-lock"></i>
+        Full account login &amp; signup — with email, phone (every country) and a secure database — is coming soon. Stay tuned!
       </div>
     </div>
-
-    <!-- STEP: WORKSPACE SETUP (first login only) -->
-    <div class="auth-card auth-step" id="step-workspace">
-      <div class="auth-icon-badge"><i class="ti ti-briefcase"></i></div>
-      <div class="auth-step-title" style="text-align:center;">Set up your workspace</div>
-      <div class="auth-landing-copy">Just a couple of details to personalize your dashboard.</div>
-      <div class="auth-form">
-        <div class="form-group"><label class="form-label">Your name</label><input type="text" class="form-input" id="wsName" placeholder="Jane Doe"></div>
-        <div class="form-group"><label class="form-label">Organization <span style="color:var(--text3);font-weight:400;">(optional)</span></label><input type="text" class="form-input" id="wsOrg" placeholder="Acme Inc."></div>
-        <button class="btn-login" id="wsSubmitBtn" onclick="completeWorkspaceSetup()"><i class="ti ti-arrow-right"></i> Continue to dashboard<div class="spinner" id="wsSpinner"></div></button>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -575,13 +491,14 @@ z-index:9999;
       <button class="nav-item active" data-view="governance" onclick="navigate(&#39;governance&#39;)"><span class="nav-icon"><i class="ti ti-gavel"></i></span><span>⚖️ Governance</span></button>
       <button class="nav-item" data-view="about" onclick="navigate(&#39;about&#39;)"><span class="nav-icon"><i class="ti ti-info-circle"></i></span><span>ℹ️ About</span></button>
       <div class="nav-section-label">System</div>
-      <button class="nav-item" onclick="doLogout()"><span class="nav-icon"><i class="ti ti-lock"></i></span><span>🔒 Sign out</span></button>
+      <button class="nav-item" onclick="doLogout()"><span class="nav-icon"><i class="ti ti-refresh"></i></span><span>🔄 Switch profile</span></button>
     </nav>
     <div class="sidebar-footer">
       <div class="user-card">
         <div class="user-avatar" id="userAvatar">A</div>
-        <div class="user-info"><div class="user-name" id="userName">admin</div><div class="user-role">Security Administrator</div></div>
+        <div class="user-info"><div class="user-name" id="userName">admin</div><div class="user-role" id="userRole">Security Administrator</div></div>
       </div>
+      <div class="profile-badge"><i class="ti ti-lock"></i> Full accounts (email/phone login) coming soon</div>
     </div>
   </aside>
 
@@ -950,228 +867,101 @@ z-index:9999;
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-/* ============================= SUPABASE ============================= */
-const SUPABASE_URL = "https://bsikedfzqmzptjtsnbff.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzaWtlZGZ6cW16cHRqdHNuYmZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NDQ5MzUsImV4cCI6MjA5OTMyMDkzNX0.5NWYL3q8_jH6Uua0CL-WMmncqHPKoSinXS4NQD35TGU";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/* ============================= PROFILE GATE ============================= */
+// No real accounts/backend — just a lightweight local profile captured once,
+// so the console can greet the person by name and remember them on return
+// visits. Stored only in this browser (localStorage).
+const PROFILE_KEY = 'sag_profile';
 let currentUser = null;
+let selectedGateRole = '';
 
-/* ============================= AUTH: STEP NAVIGATION ============================= */
-function showAuthStep(stepId){
-  document.querySelectorAll('.auth-step').forEach(s=>s.classList.remove('active'));
-  const el = document.getElementById(stepId);
-  if(el) el.classList.add('active');
-  document.querySelectorAll('.auth-error').forEach(e=>{ e.classList.remove('visible'); e.textContent=''; });
+function loadStoredProfile(){
+  try{
+    const raw = localStorage.getItem(PROFILE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
 }
 
-function showAuthError(fieldErrorId, msg){
-  const el = document.getElementById(fieldErrorId);
-  if(!el) return;
-  el.textContent = msg;
-  el.classList.add('visible');
+function saveStoredProfile(profile){
+  try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }catch(e){}
 }
 
-function setBtnLoading(btnId, spinnerId, loading){
-  const btn = document.getElementById(btnId);
-  const spinner = document.getElementById(spinnerId);
-  if(btn) btn.disabled = loading;
-  if(spinner) spinner.style.display = loading ? 'inline-block' : 'none';
+function clearStoredProfile(){
+  try{ localStorage.removeItem(PROFILE_KEY); }catch(e){}
 }
 
-/* ============================= PASSWORD STRENGTH & VISIBILITY ============================= */
-function togglePw(inputId, btn){
-  const input = document.getElementById(inputId);
-  const icon = btn.querySelector('i');
-  if(input.type === 'password'){
-    input.type = 'text';
-    icon.className = 'ti ti-eye-off';
-  } else {
-    input.type = 'password';
-    icon.className = 'ti ti-eye';
+function initRoleChips(){
+  document.querySelectorAll('.gate-role-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('.gate-role-chip').forEach(c=>c.classList.remove('selected'));
+      chip.classList.add('selected');
+      selectedGateRole = chip.getAttribute('data-role');
+      if(selectedGateRole === 'Other'){
+        document.getElementById('gateOrg').focus();
+      }
+    });
+  });
+}
+
+function enterGuardianConsole(){
+  const name = document.getElementById('gateName').value.trim();
+  const org = document.getElementById('gateOrg').value.trim();
+  const errorEl = document.getElementById('gateError');
+
+  if(!name){
+    errorEl.textContent = 'Enter your name to continue.';
+    errorEl.classList.add('visible');
+    return;
   }
-}
-
-function scorePassword(pw){
-  let score = 0;
-  if(!pw) return 0;
-  if(pw.length >= 8) score += 25;
-  if(pw.length >= 12) score += 15;
-  if(/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 20;
-  if(/[0-9]/.test(pw)) score += 20;
-  if(/[^a-zA-Z0-9]/.test(pw)) score += 20;
-  return Math.min(score, 100);
-}
-
-function updatePwStrength(inputId, fillId, labelId){
-  inputId = inputId || 'signupPassword';
-  fillId = fillId || 'pwStrengthFill';
-  labelId = labelId || 'pwStrengthLabel';
-  const pw = document.getElementById(inputId).value;
-  const score = scorePassword(pw);
-  const fill = document.getElementById(fillId);
-  const label = document.getElementById(labelId);
-  fill.style.width = score + '%';
-  if(!pw){ fill.style.background='var(--red)'; label.textContent='Enter a password'; return; }
-  if(score < 40){ fill.style.background='var(--red)'; label.textContent='Weak — try adding numbers and symbols'; }
-  else if(score < 70){ fill.style.background='var(--amber)'; label.textContent='Fair — add uppercase or a symbol'; }
-  else if(score < 90){ fill.style.background='var(--blue)'; label.textContent='Good password'; }
-  else { fill.style.background='var(--green)'; label.textContent='Strong password'; }
-}
-
-/* ============================= OAUTH ============================= */
-async function oauthLogin(provider){
-  const { error } = await supabaseClient.auth.signInWithOAuth({
-    provider,
-    options: { redirectTo: window.location.origin + window.location.pathname }
-  });
-  if(error) showToast(provider+' sign-in failed: '+error.message, 'error');
-}
-
-/* ============================= SIGN UP ============================= */
-async function doSignup(){
-  const email = document.getElementById('signupEmail').value.trim();
-  const password = document.getElementById('signupPassword').value;
-  const confirm = document.getElementById('signupConfirm').value;
-
-  if(!email || !password){ showAuthError('signupError','Enter an email and password.'); return; }
-  if(password.length < 8){ showAuthError('signupError','Password must be at least 8 characters.'); return; }
-  if(password !== confirm){ showAuthError('signupError','Passwords do not match.'); return; }
-
-  setBtnLoading('signupSubmitBtn','signupSpinner',true);
-  const { data, error } = await supabaseClient.auth.signUp({ email, password });
-  setBtnLoading('signupSubmitBtn','signupSpinner',false);
-
-  if(error){ showAuthError('signupError', error.message); return; }
-
-  if(data.session){
-    // Email confirmation is off in the Supabase project — go straight into workspace setup
-    currentUser = data.user;
-    showAuthStep('step-workspace');
-  } else {
-    document.getElementById('verifyEmailText').textContent = 'We sent a verification link to '+email+'. Click it to activate your account, then come back and sign in.';
-    showAuthStep('step-verify');
+  if(!selectedGateRole){
+    errorEl.textContent = 'Pick the option that best describes you.';
+    errorEl.classList.add('visible');
+    return;
   }
-}
+  errorEl.classList.remove('visible');
 
-async function resendVerification(){
-  const emailField = document.getElementById('signupEmail');
-  const email = (emailField && emailField.value.trim()) || '';
-  if(!email){ showToast('Go back and enter your email again to resend.', 'error'); return; }
-  const { error } = await supabaseClient.auth.resend({ type:'signup', email });
-  if(error) showToast('Could not resend: '+error.message, 'error');
-  else showToast('Verification email resent.', 'success');
-}
-
-/* ============================= SIGN IN ============================= */
-async function doLogin(){
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  if(!email || !password){ showAuthError('authError','Enter an email and password.'); return; }
-
-  setBtnLoading('loginSubmitBtn','loginSpinner',true);
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  setBtnLoading('loginSubmitBtn','loginSpinner',false);
-
-  if(error){ showAuthError('authError', error.message); return; }
-  enterApp(data.user);
-}
-
-/* ============================= FORGOT / RESET PASSWORD ============================= */
-async function doForgotPassword(){
-  const email = document.getElementById('forgotEmail').value.trim();
-  if(!email){ showAuthError('forgotError','Enter your account email.'); return; }
-
-  setBtnLoading('forgotSubmitBtn','forgotSpinner',true);
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + window.location.pathname
-  });
-  setBtnLoading('forgotSubmitBtn','forgotSpinner',false);
-
-  if(error){ showAuthError('forgotError', error.message); return; }
-  showAuthStep('step-forgot-sent');
-}
-
-async function doResetPassword(){
-  const pw = document.getElementById('resetPassword').value;
-  const confirm = document.getElementById('resetConfirm').value;
-  if(pw.length < 8){ showAuthError('resetError','Password must be at least 8 characters.'); return; }
-  if(pw !== confirm){ showAuthError('resetError','Passwords do not match.'); return; }
-
-  setBtnLoading('resetSubmitBtn','resetSpinner',true);
-  const { data, error } = await supabaseClient.auth.updateUser({ password: pw });
-  setBtnLoading('resetSubmitBtn','resetSpinner',false);
-
-  if(error){ showAuthError('resetError', error.message); return; }
-  showToast('Password updated — signing you in.', 'success');
-  enterApp(data.user);
-}
-
-/* ============================= WORKSPACE SETUP (first login only) ============================= */
-async function completeWorkspaceSetup(){
-  const name = document.getElementById('wsName').value.trim();
-  const org = document.getElementById('wsOrg').value.trim();
-
-  setBtnLoading('wsSubmitBtn','wsSpinner',true);
-  const { data, error } = await supabaseClient.auth.updateUser({
-    data: { full_name: name || null, organization: org || null, workspace_setup_done: true }
-  });
-  setBtnLoading('wsSubmitBtn','wsSpinner',false);
-
-  if(error){ showToast('Could not save workspace details: '+error.message,'error'); }
-  if(data && data.user) currentUser = data.user;
-  finishEnterApp(currentUser);
+  const profile = { name, role: selectedGateRole, org, createdAt: new Date().toISOString() };
+  saveStoredProfile(profile);
+  enterApp(profile);
 }
 
 /* ============================= APP ENTRY ============================= */
-function enterApp(user){
-  currentUser = user;
-  // First-time users (fresh signup, or OAuth users who've never set up a workspace) see setup once
-  const alreadySetUp = user.user_metadata && user.user_metadata.workspace_setup_done;
-  if(!alreadySetUp){
-    showAuthStep('step-workspace');
-    return;
-  }
-  finishEnterApp(user);
-}
-
-function finishEnterApp(user){
-  const label = (user.user_metadata && user.user_metadata.full_name) || user.email || 'User';
+function enterApp(profile){
+  currentUser = profile;
+  const label = profile.name || 'User';
   document.getElementById('userName').textContent = label;
   document.getElementById('userAvatar').textContent = label.charAt(0).toUpperCase();
+  const roleLabel = profile.org ? (profile.role + ' · ' + profile.org) : profile.role;
+  document.getElementById('userRole').textContent = roleLabel || 'Guardian User';
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   loadHistory().then(renderAll);
 }
 
-async function doLogout(){
-  await supabaseClient.auth.signOut();
+function doLogout(){
+  clearStoredProfile();
   currentUser = null;
   history = [];
+  selectedGateRole = '';
   document.getElementById('app').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
-  showAuthStep('step-landing');
-  document.getElementById('loginEmail').value = '';
-  document.getElementById('loginPassword').value = '';
+  document.getElementById('gateName').value = '';
+  document.getElementById('gateOrg').value = '';
+  document.querySelectorAll('.gate-role-chip').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('gateError').classList.remove('visible');
 }
 
-/* Restore an existing session on page load (so refreshing doesn't log you out),
-   and detect a password-recovery link (emailed reset link lands back here). */
-async function checkExistingSession(){
+/* Restore a saved profile on page load, so refreshing doesn't reset you. */
+function checkExistingSession(){
   document.getElementById('loginScreen').style.display = 'flex';
+  initRoleChips();
 
-  supabaseClient.auth.onAuthStateChange((event, session)=>{
-    if(event === 'PASSWORD_RECOVERY'){
-      showAuthStep('step-reset');
-    }
-  });
-
-  const { data:{ session } } = await supabaseClient.auth.getSession();
-  if(session && session.user && !window.location.hash.includes('type=recovery')){
-    enterApp(session.user);
-  } else if(!window.location.hash.includes('type=recovery')){
-    showAuthStep('step-landing');
+  const profile = loadStoredProfile();
+  if(profile && profile.name){
+    enterApp(profile);
   }
 }
+
 
 /* ============================= SIDEBAR MOBILE ============================= */
 function toggleSidebar(){
@@ -1701,52 +1491,29 @@ function applyAutocorrect(text){
   }
 }
 
-/* ============================= STATE & SUPABASE HISTORY ============================= */
+/* ============================= STATE & LOCAL HISTORY ============================= */
 let history = [];
 
-/* Inserts only the newest entry (history[0]) into Supabase, tied to the logged-in user.
-   Row Level Security on the "prompts" table guarantees users can only ever see their own rows. */
+/* History is stored locally in this browser (localStorage) — there's no
+   backend account, so nothing is synced across devices yet. */
+const HISTORY_KEY = 'sag_history';
+const MAX_HISTORY_ENTRIES = 300;
+
 async function saveHistory(){
-  if(!currentUser) return;
-  const entry = history[0];
-  if(!entry) return;
   try{
-    const { error } = await supabaseClient.from('prompts').insert({
-      user_id: currentUser.id,
-      prompt_text: entry.text,
-      category: entry.category,
-      risk_score: entry.riskScore,
-      confidence: entry.confidence,
-      risk_level: entry.riskLevel,
-      decision: entry.decision
-    });
-    if(error) console.warn('Supabase save failed:', error.message);
-  }catch(e){ console.warn('Supabase save failed:', e); }
+    const serializable = history.slice(0, MAX_HISTORY_ENTRIES).map(h=>Object.assign({}, h, {
+      timestamp: h.timestamp instanceof Date ? h.timestamp.toISOString() : h.timestamp
+    }));
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(serializable));
+  }catch(e){ console.warn('Local history save failed:', e); }
 }
 
-/* Loads all of the logged-in user's past prompts from Supabase */
 async function loadHistory(){
-  if(!currentUser){ history = []; return; }
   try{
-    const { data, error } = await supabaseClient
-      .from('prompts')
-      .select('*')
-      .eq('user_id', currentUser.id)
-      .order('created_at', { ascending:false });
-    if(error){ console.warn('Supabase load failed:', error.message); history = []; return; }
-    history = (data||[]).map(row=>({
-      text: row.prompt_text,
-      timestamp: new Date(row.created_at),
-      riskScore: row.risk_score,
-      riskLevel: row.risk_level,
-      decision: row.decision,
-      category: row.category,
-      confidence: row.confidence,
-      reasons: [],
-      behavioral: [],
-      intentAnalysis: ''
-    }));
-  }catch(e){ history = []; console.warn('Supabase load failed:', e); }
+    const raw = localStorage.getItem(HISTORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    history = parsed.map(row=>Object.assign({}, row, { timestamp: new Date(row.timestamp) }));
+  }catch(e){ history = []; console.warn('Local history load failed:', e); }
 }
 
 function setPrompt(text){ document.getElementById('promptInput').value=text; updateCharCount(); navigate('analyze'); }
@@ -1764,16 +1531,12 @@ function clearPrompt(){
 
 async function clearHistory(){
   if(!confirm('Clear ALL audit log entries? This cannot be undone.')) return;
-  if(currentUser){
-    try{
-      const { error } = await supabaseClient.from('prompts').delete().eq('user_id', currentUser.id);
-      if(error) console.warn('Supabase clear failed:', error.message);
-    }catch(e){ console.warn('Supabase clear failed:', e); }
-  }
+  try{ localStorage.removeItem(HISTORY_KEY); }catch(e){}
   history = [];
   renderAll();
   showToast('Audit log cleared','info');
 }
+
 
 function updateCharCount(){
   const text = document.getElementById('promptInput').value;
@@ -2566,12 +2329,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('promptInput').addEventListener('input',updateCharCount);
   document.getElementById('promptInput').addEventListener('keydown',(e)=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') analyzePrompt(); });
   document.getElementById('promptInput').addEventListener('blur',(e)=>{ if(e.target.value.trim()) applyAutocorrect(e.target.value); });
-  document.getElementById('loginEmail').addEventListener('keydown',e=>e.key==='Enter'&&document.getElementById('loginPassword').focus());
-  document.getElementById('loginPassword').addEventListener('keydown',e=>e.key==='Enter'&&doLogin());
-  document.getElementById('signupConfirm').addEventListener('keydown',e=>e.key==='Enter'&&doSignup());
-  document.getElementById('forgotEmail').addEventListener('keydown',e=>e.key==='Enter'&&doForgotPassword());
-  document.getElementById('resetConfirm').addEventListener('keydown',e=>e.key==='Enter'&&doResetPassword());
-  document.getElementById('wsName').addEventListener('keydown',e=>e.key==='Enter'&&completeWorkspaceSetup());
+  document.getElementById('gateName').addEventListener('keydown',e=>e.key==='Enter'&&enterGuardianConsole());
+  document.getElementById('gateOrg').addEventListener('keydown',e=>e.key==='Enter'&&enterGuardianConsole());
   loadOllamaSettings();
   checkExistingSession();
 
