@@ -1494,23 +1494,53 @@ function applyAutocorrect(text){
 /* ============================= STATE & LOCAL HISTORY ============================= */
 let history = [];
 
-/* History is stored locally in this browser (localStorage) — there's no
-   backend account, so nothing is synced across devices yet. */
-const HISTORY_KEY = 'sag_history';
+/* History is stored locally in this browser (localStorage), keyed by the
+   person's name — so typing the same name back in reunites you with your
+   past analyses, even after "Switch profile" or closing the tab. There's
+   still no real backend account, so this doesn't sync across devices/browsers. */
 const MAX_HISTORY_ENTRIES = 300;
+const LEGACY_HISTORY_KEY = 'sag_history'; // used by an earlier version, migrated below
+
+function slugifyName(name){
+  return (name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'guest';
+}
+
+function historyKeyFor(profile){
+  const p = profile || currentUser;
+  return 'sag_history:' + slugifyName(p && p.name);
+}
 
 async function saveHistory(){
   try{
+    const key = historyKeyFor();
     const serializable = history.slice(0, MAX_HISTORY_ENTRIES).map(h=>Object.assign({}, h, {
       timestamp: h.timestamp instanceof Date ? h.timestamp.toISOString() : h.timestamp
     }));
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(serializable));
+    localStorage.setItem(key, JSON.stringify(serializable));
   }catch(e){ console.warn('Local history save failed:', e); }
 }
 
 async function loadHistory(){
   try{
-    const raw = localStorage.getItem(HISTORY_KEY);
+    const key = historyKeyFor();
+    let raw = localStorage.getItem(key);
+
+    // One-time migration: an earlier version of this app stored everyone's
+    // history under a single shared key. If this name has no history yet
+    // but that old shared key does, adopt it once so nobody loses data.
+    if(!raw){
+      const legacy = localStorage.getItem(LEGACY_HISTORY_KEY);
+      if(legacy){
+        localStorage.setItem(key, legacy);
+        localStorage.removeItem(LEGACY_HISTORY_KEY);
+        raw = legacy;
+      }
+    }
+
     const parsed = raw ? JSON.parse(raw) : [];
     history = parsed.map(row=>Object.assign({}, row, { timestamp: new Date(row.timestamp) }));
   }catch(e){ history = []; console.warn('Local history load failed:', e); }
@@ -1531,7 +1561,7 @@ function clearPrompt(){
 
 async function clearHistory(){
   if(!confirm('Clear ALL audit log entries? This cannot be undone.')) return;
-  try{ localStorage.removeItem(HISTORY_KEY); }catch(e){}
+  try{ localStorage.removeItem(historyKeyFor()); }catch(e){}
   history = [];
   renderAll();
   showToast('Audit log cleared','info');
